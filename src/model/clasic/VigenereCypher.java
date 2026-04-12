@@ -1,4 +1,4 @@
-package model;
+package model.clasic;
 
 import Tool.Alphabet;
 import  java.util.Random;

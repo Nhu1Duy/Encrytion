@@ -1,6 +1,10 @@
 package controller;
-
-import model.*;
+import model.clasic.AffineCypher;
+import model.clasic.CaesarCypher;
+import model.clasic.HillCypher;
+import model.clasic.PermutationCypher;
+import model.clasic.SubstitutionCipher;
+import model.clasic.VigenereCypher;
 import view.MainFrame;
 
 import java.util.HashSet;
