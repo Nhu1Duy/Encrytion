@@ -16,8 +16,7 @@ public class MainFrame {
 	private HillConfigPanel hillPanel;
     private PermutationConfigPanel permutationPanel;
 	private JTextArea inputArea, outputArea;
-	private JTextField keyField;
-	private JButton encryptBtn, decryptBtn, genSubKeyBtn;
+	private JButton encryptBtn, decryptBtn;
 	
 	private JPanel content;
 	private JLabel statusLabel;
@@ -30,21 +29,7 @@ public class MainFrame {
 	private JMenuItem itemPermutation = new JMenuItem("Hoán Vị");
 	private JMenuItem itemVN = new JMenuItem("Tiếng Việt");
 	private JMenuItem itemEN = new JMenuItem("English");
-	/// --- KEY FIELD ---
-	private JTextField caesarKeyField;
-	private JTextArea substitutionKeyField;
-	private JTextField affineKeyA, affineKeyB;
-	private JTextField vigenereKeyField;
-	private JTextField hillKeyField;
-	private JTextField permutationKeyField;
-	/// --- GENKEY ---
-	private JButton genCaesarKeyBtn;
-	private JTextField caesarKeyLenField;
-	private JButton genAffineKeyBtn;
-	private JTextField vigenereKeyLenField;
-	JButton genVigenereKeyBtn;
-	private JTextField permutationKeyLenField; 
-	private JButton genPermutationKeyBtn;
+	
 	private JPanel cardPanel;
 	private CardLayout cardLayout;
 	public MainFrame() {
@@ -98,6 +83,16 @@ public class MainFrame {
 
 		addContent();
 		setMethodTitle("Caesar");
+		
+		JTextArea tempt = new JTextArea();
+		GridBagConstraints frameD = new GridBagConstraints();
+		frameD.gridx = 1;
+		frameD.gridy = 0;
+		frameD.gridwidth = GridBagConstraints.REMAINDER;
+		frameD.fill = GridBagConstraints.BOTH;
+		frameD.weightx = 1.0;
+		frameD.weighty = 1.0;
+		frame.add(tempt,frameD);
 			
 		frame.setSize(500, 600);
 		frame.setLocationRelativeTo(null);
@@ -140,34 +135,14 @@ public class MainFrame {
 	    affinePanel = new AffineConfigPanel();
 	    cardPanel.add(affinePanel, "Affine");
 		/// --- VIGENNERE KEY ---
-		JPanel vigenerePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		vigenereKeyField = new JTextField(15);
-		vigenerePanel.add(new JLabel("Từ khóa (String): "));
-		genVigenereKeyBtn = new JButton("Gen");
-		vigenereKeyLenField = new JTextField("8", 3);
-		vigenerePanel.add(vigenereKeyField);
-		vigenerePanel.add(new JLabel(" | Độ dài: "));
-		vigenerePanel.add(vigenereKeyLenField);
-		vigenerePanel.add(genVigenereKeyBtn);
+	    vigenerePanel = new VigenereConfigPanel();
 		cardPanel.add(vigenerePanel, "Vigenere");
 		/// --- HILL KEY ---
-		JPanel hillPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	    hillKeyField = new JTextField(10);
-	    hillPanel.add(new JLabel("Ma trận (4 số):<<PIGGY_SKIP>>"));
-	    hillPanel.add(hillKeyField);
+		hillPanel = new HillConfigPanel();
 	    cardPanel.add(hillPanel, "Hill");
 		/// --- PERMUTATION KEY ---
-	    JPanel permPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	    permutationKeyField = new JTextField(10);
-	    permutationKeyLenField = new JTextField("5", 3);
-	    genPermutationKeyBtn = new JButton("Gen");
-
-	    permPanel.add(new JLabel("Thứ tự:"));
-	    permPanel.add(permutationKeyField);
-	    permPanel.add(new JLabel(" | Độ dài: "));
-	    permPanel.add(permutationKeyLenField);
-	    permPanel.add(genPermutationKeyBtn);
-	    cardPanel.add(permPanel, "Hoán Vị");
+	    permutationPanel = new PermutationConfigPanel();
+	    cardPanel.add(permutationPanel, "Hoán Vị");
 		c.gridy = 2;
 		content.add(cardPanel, c);
 		/// --- BUTTON ---
@@ -205,8 +180,9 @@ public class MainFrame {
 		frameC.fill = GridBagConstraints.BOTH;
 		frameC.weightx = 1.0;
 		frameC.weighty = 1.0;
-
 		frame.add(content, frameC);
+		
+		
 	}
 
 	public JTextArea getInputArea() {
@@ -215,44 +191,6 @@ public class MainFrame {
 
 	public JTextArea getOutputArea() {
 		return outputArea;
-	}
-
-	public String getCaesarKey() {
-		return caesarKeyField.getText();
-	}
-	public JTextArea getSubstitutionKeyField() {
-		return substitutionKeyField;
-	}
-	public String getSubstitutionKey() {
-		return substitutionKeyField.getText();
-	}
-
-	public String getTextAffineKeyA() {
-		return affineKeyA.getText();
-	}
-	public String getTextAffineKeyB() {
-		return affineKeyB.getText();
-	}
-	public JTextField getAffineKeyA() {
-		return affineKeyA;
-	}
-	public JTextField getAffineKeyB() {
-		return affineKeyB;
-	}
-
-	public String getTextVigenereKey() {
-		return vigenereKeyField.getText();
-	}
-	public JTextField getVigenereKeyField() {
-		return vigenereKeyField;
-	}
-
-	public String getHillKey() {
-		return hillKeyField.getText();
-	}
-
-	public String getPermutaionKey() {
-		return permutationKeyField.getText();
 	}
 
 	public JButton getEncryptBtn() {
@@ -294,10 +232,6 @@ public class MainFrame {
 	public JMenuItem getItemEN() {
 	    return itemEN;
 	}
-	public JButton getGenSubKeyBtn() {
-	    return genSubKeyBtn;
-	}
-	/// ***********************************************************************************************///
 	/// --- Get Panel Sub --- 
 	public CaesarConfigPanel getCaesarPanel() { return caesarPanel; }
 	public SubstitutionConfigPanel getSubstitutionPanel() { return substitutionPanel; }
@@ -321,28 +255,5 @@ public class MainFrame {
 	public static void main(String[] args) {
 		MainFrame frame = new MainFrame();
 		new CryptoController(frame);
-	}
-	public JButton getGenCaesarKeyBtn() {
-	    return genCaesarKeyBtn;
-	}
-	public JButton getGenAffineKeyBtn() {
-	    return genAffineKeyBtn;
-	}
-	public JButton getGenVigenereKeyBtn() {
-        return genVigenereKeyBtn;
-    }
-	public String getVigenereKeyLen() {
-	    return vigenereKeyLenField.getText().trim();
-	}
-	public String getPermutationKeyLen() {
-	    return permutationKeyLenField.getText().trim();
-	}
-
-	public JTextField getPermutationKeyField() {
-	    return permutationKeyField;
-	}
-
-	public JButton getGenPermutationKeyBtn() {
-	    return genPermutationKeyBtn;
 	}
 }

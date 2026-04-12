@@ -4,7 +4,7 @@ import Tool.Alphabet;
 import java.util.Random;
 
 public class AffineCypher {
-	public static int[] genKey(int n) {
+	public int[] genKey(int n) {
         Random rand = new Random();
         int a;
         do {

@@ -11,7 +11,7 @@ public class HillConfigPanel extends JPanel {
 
         keyField = new JTextField(10);
 
-        add(new JLabel("Ma trận (4 số): "));
+        add(new JLabel("Nhập 1: "));
         add(keyField);
     }
 

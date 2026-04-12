@@ -45,6 +45,7 @@ public class CryptoController {
 		});
 		view.getEncryptBtn().addActionListener(e -> handleAction(true));
 		view.getDecryptBtn().addActionListener(e -> handleAction(false));
+		
 		/// --- GENKEY ---
 		view.getCaesarPanel().getGenBtn().addActionListener(e -> {
 			try {
@@ -74,27 +75,27 @@ public class CryptoController {
 			view.getAffinePanel().getKeyB().setText(String.valueOf(keys[1]));
 		});
 
-		view.getGenVigenereKeyBtn().addActionListener(e -> {
+		view.getVigenerePanel().getGenBtn().addActionListener(e -> {
 			try {
-				String lenStr = view.getVigenereKeyLen();
+				String lenStr = view.getVigenerePanel().getTextKeyLenField();
 				int length = lenStr.isEmpty() ? 8 : Integer.parseInt(lenStr);
 				String alphabet = currentLanguage.equals("VN") ? Tool.Alphabet.VN_ALPHABET_FUL
 						: Tool.Alphabet.EN_ALPHABET_FUL;
 
 				String randomKey = vigenereCipher.genKey(alphabet, length);
-				view.getVigenereKeyField().setText(randomKey);
+				view.getVigenerePanel().getKeyField().setText(randomKey);
 			} catch (NumberFormatException ex) {
 				JOptionPane.showMessageDialog(null, "Độ dài khóa phải là số nguyên dương!");
 			}
 		});
-		view.getGenPermutationKeyBtn().addActionListener(e -> {
+		view.getPermutationPanel().getGenBtn().addActionListener(e -> {
 			try {
-				String lenStr = view.getPermutationKeyLen();
+				String lenStr = view.getPermutationPanel().getLenField().getText();
 				int length = lenStr.isEmpty() ? 5 : Integer.parseInt(lenStr);
 
 				String randomKey = permutationCypher.genKey(length);
 
-				view.getPermutationKeyField().setText(randomKey);
+				 view.getPermutationPanel().getKeyField().setText(randomKey);
 
 			} catch (NumberFormatException ex) {
 				JOptionPane.showMessageDialog(null, "Độ dài khóa hoán vị phải là số nguyên!");
@@ -121,7 +122,7 @@ public class CryptoController {
 
 			switch (currentMethod) {
 
-			// ================= CAESAR =================
+			/// --- CAESAR ---
 			case "Dịch Chuyển": {
 				String keyStr = view.getCaesarPanel().getTextKeyField().trim();
 				if (keyStr.isEmpty()) {
@@ -137,21 +138,8 @@ public class CryptoController {
 				break;
 			}
 
-			// ================= VIGENERE =================
-			case "Vigenere": {
-				String key = view.getTextVigenereKey().trim();
-				if (key.isEmpty())
-					throw new Exception("Key không được để trống");
 
-				if (currentLanguage.equals("VN")) {
-					result = isEncrypt ? vigenereCipher.encryptVN(input, key) : vigenereCipher.decryptVN(input, key);
-				} else {
-					result = isEncrypt ? vigenereCipher.encryptEN(input, key) : vigenereCipher.decryptEN(input, key);
-				}
-				break;
-			}
-
-			// ================= SUBSTITUTION =================
+			/// ---  SUBSTITUTION ---
 			case "Thay Thế": {
 			    try {
 			        String key = view.getSubstitutionPanel().getKeyArea().getText();
@@ -188,7 +176,7 @@ public class CryptoController {
 			    break;
 			}
 
-			// ================= AFFINE =================
+			/// --- AFFINE --- 
 			case "Affine": {
 				String aStr = view.getAffinePanel().getTextKeyA().trim();
 				String bStr = view.getAffinePanel().getTextKeyB().trim();
@@ -216,9 +204,23 @@ public class CryptoController {
 				break;
 			}
 
-			/// ================= HILL =================
+			/// ---  VIGENERE --- 
+			case "Vigenere": {
+				String key = view.getVigenerePanel().getKeyField().getText().trim();
+				if (key.isEmpty())
+					throw new Exception("Key không được để trống");
+
+				if (currentLanguage.equals("VN")) {
+					result = isEncrypt ? vigenereCipher.encryptVN(input, key) : vigenereCipher.decryptVN(input, key);
+				} else {
+					result = isEncrypt ? vigenereCipher.encryptEN(input, key) : vigenereCipher.decryptEN(input, key);
+				}
+				break;
+			}
+
+			/// ---  HILL --- 
 			case "Hill": {
-				String hillKey = view.getHillKey().trim();
+				String hillKey = view.getHillPanel().getKeyField().getText().trim();
 				if (hillKey.isEmpty()) {
 					throw new Exception("Key Hill không được để trống");
 				}
@@ -227,9 +229,9 @@ public class CryptoController {
 				break;
 			}
 
-			// ================= PERMUTATION =================
+			/// --- PERMUTATION --- 
 			case "Hoán Vị": {
-				String permKey = view.getPermutaionKey().trim();
+				String permKey = view.getPermutationPanel().getKeyField().getText().trim();
 				if (permKey.isEmpty()) {
 					throw new Exception("Key hoán vị không được để trống");
 				}
@@ -239,7 +241,7 @@ public class CryptoController {
 				break;
 			}
 
-			// ================= DEFAULT =================
+			///--- DEFAULT --- 
 			default:
 				throw new Exception("Phương pháp không hợp lệ");
 			}
