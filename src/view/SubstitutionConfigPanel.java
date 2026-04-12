@@ -10,7 +10,6 @@ public class SubstitutionConfigPanel extends JPanel {
     public SubstitutionConfigPanel() {
         setLayout(new BorderLayout());
 
-        // giống y chang MainFrame
         setBorder(BorderFactory.createTitledBorder("Bảng thay thế (Key)"));
 
         keyArea = new JTextArea(2, 20);
@@ -23,7 +22,6 @@ public class SubstitutionConfigPanel extends JPanel {
         add(genBtn, BorderLayout.SOUTH);
     }
 
-    // Getter
     public JTextArea getKeyArea() {
         return keyArea;
     }

@@ -9,7 +9,11 @@ import controller.CryptoController;
 
 public class MainFrame {
 	JFrame frame = new JFrame();
+	private CaesarConfigPanel caesarPanel;
+	private SubstitutionConfigPanel substitutionPanel;
 	private AffineConfigPanel affinePanel;
+	private VigenereConfigPanel vigenerePanel;
+	private HillConfigPanel hillPanel;
     private PermutationConfigPanel permutationPanel;
 	private JTextArea inputArea, outputArea;
 	private JTextField keyField;
@@ -41,9 +45,11 @@ public class MainFrame {
 	JButton genVigenereKeyBtn;
 	private JTextField permutationKeyLenField; 
 	private JButton genPermutationKeyBtn;
-private JPanel cardPanel;
+	private JPanel cardPanel;
 	private CardLayout cardLayout;
 	public MainFrame() {
+		System.out.println(Tool.Alphabet.VN_ALPHABET_FUL.length());
+		System.out.println(Tool.Alphabet.EN_ALPHABET_FUL.length());
 		GridBagConstraints gbc = new GridBagConstraints();
 		frame.setTitle("Công cụ mã hóa");
 		frame.setLayout(new GridBagLayout());
@@ -125,38 +131,13 @@ private JPanel cardPanel;
 		cardPanel = new JPanel(cardLayout);
 		cardPanel.setBorder(BorderFactory.createTitledBorder("Cấu hình Key"));
 		/// --- CAESAR KEY ---
-		JPanel caesarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		caesarKeyField = new JTextField(5);
-		caesarKeyLenField = new JTextField("188", 3);
-		genCaesarKeyBtn = new JButton("Gen Key");
-
-		caesarPanel.add(new JLabel("Bước nhảy: "));
-		caesarPanel.add(caesarKeyField);
-		caesarPanel.add(new JLabel(" | Giới hạn: "));
-		caesarPanel.add(caesarKeyLenField);
-		caesarPanel.add(genCaesarKeyBtn);
-
+		caesarPanel = new CaesarConfigPanel();	
 		cardPanel.add(caesarPanel, "Dịch Chuyển");
-
 		/// --- SUBSTITUTION KEY ---
-		JPanel subPanel = new JPanel(new BorderLayout());
-		subPanel.setBorder(BorderFactory.createTitledBorder("Bảng thay thế (Key)"));
-		substitutionKeyField = new JTextArea(2, 20);
-		substitutionKeyField.setLineWrap(true);
-		substitutionKeyField.setText("Tạo key của bạn");
-		genSubKeyBtn = new JButton("Tạo Key Ngẫu Nhiên");
-		subPanel.add(genSubKeyBtn, BorderLayout.SOUTH);
-		subPanel.add(new JScrollPane(substitutionKeyField), BorderLayout.CENTER);
-		cardPanel.add(subPanel, "Thay Thế");
+		substitutionPanel = new SubstitutionConfigPanel();
+		cardPanel.add(substitutionPanel, "Thay Thế");
 		/// --- AFFINE KEY ---
-//		JPanel affinePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-//		affineKeyA = new JTextField(3);
-//	    affineKeyB = new JTextField(3);
-//	    affinePanel.add(new JLabel("Hệ số a:")); affinePanel.add(affineKeyA);
-//	    affinePanel.add(new JLabel("Hệ số b:")); affinePanel.add(affineKeyB);
-//	    genAffineKeyBtn = new JButton("Gen Key");affinePanel.add(genAffineKeyBtn);
 	    affinePanel = new AffineConfigPanel();
-	    
 	    cardPanel.add(affinePanel, "Affine");
 		/// --- VIGENNERE KEY ---
 		JPanel vigenerePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -317,8 +298,14 @@ private JPanel cardPanel;
 	    return genSubKeyBtn;
 	}
 	/// ***********************************************************************************************///
-	/// 
+	/// --- Get Panel Sub --- 
+	public CaesarConfigPanel getCaesarPanel() { return caesarPanel; }
+	public SubstitutionConfigPanel getSubstitutionPanel() { return substitutionPanel; }
 	public AffineConfigPanel getAffinePanel() { return affinePanel; }
+	public VigenereConfigPanel getVigenerePanel() { return vigenerePanel; }
+	public HillConfigPanel getHillPanel() { return hillPanel; }
+	public PermutationConfigPanel getPermutationPanel()	{ return permutationPanel; }
+	
 	public void setMethodTitle(String title) {
 		((javax.swing.border.TitledBorder) content.getBorder()).setTitle("Phương pháp: " + title);
 		content.repaint();
@@ -337,14 +324,6 @@ private JPanel cardPanel;
 	}
 	public JButton getGenCaesarKeyBtn() {
 	    return genCaesarKeyBtn;
-	}
-
-	public String getCaesarKeyMax() {
-	    return caesarKeyLenField.getText();
-	}
-
-	public void setCaesarKey(String key) {
-	    caesarKeyField.setText(key);
 	}
 	public JButton getGenAffineKeyBtn() {
 	    return genAffineKeyBtn;
