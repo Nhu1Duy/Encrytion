@@ -1,10 +1,10 @@
 package controller;
-import model.clasic.AffineCypher;
-import model.clasic.CaesarCypher;
-import model.clasic.HillCypher;
-import model.clasic.PermutationCypher;
+import model.clasic.AffineCipher;
+import model.clasic.CaesarCipher;
+import model.clasic.HillCipher;
+import model.clasic.PermutationCipher;
 import model.clasic.SubstitutionCipher;
-import model.clasic.VigenereCypher;
+import model.clasic.VigenereCipher;
 import view.MainFrame;
 
 import java.util.HashSet;
@@ -14,23 +14,23 @@ import javax.swing.JOptionPane;
 
 public class CryptoController {
 	private MainFrame view;
-	private CaesarCypher caesarCypher;
+	private CaesarCipher caesarCypher;
 	private SubstitutionCipher substitutionCipher;
-	private VigenereCypher vigenereCipher;
-	private AffineCypher affineCypher;
-	private HillCypher hillCyper;
-	private PermutationCypher permutationCypher;
+	private VigenereCipher vigenereCipher;
+	private AffineCipher affineCypher;
+	private HillCipher hillCyper;
+	private PermutationCipher permutationCypher;
 	private String currentMethod = "Dịch Chuyển";
 	private String currentLanguage = "VN";
 
 	public CryptoController(MainFrame view) {
 		this.view = view;
-		this.caesarCypher = new CaesarCypher();
+		this.caesarCypher = new CaesarCipher();
 		this.substitutionCipher = new SubstitutionCipher();
-		this.vigenereCipher = new VigenereCypher();
-		this.affineCypher = new AffineCypher();
-		this.hillCyper = new HillCypher();
-		this.permutationCypher = new PermutationCypher();
+		this.vigenereCipher = new VigenereCipher();
+		this.affineCypher = new AffineCipher();
+		this.hillCyper = new HillCipher();
+		this.permutationCypher = new PermutationCipher();
 
 		view.getItemCaesar().addActionListener(e -> switchMethod("Dịch Chuyển", "Caesar"));
 		view.getItemVigenere().addActionListener(e -> switchMethod("Vigenere", "Vigenere"));

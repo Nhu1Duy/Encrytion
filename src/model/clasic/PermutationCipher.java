@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.*;
 
-public class PermutationCypher {
+public class PermutationCipher {
 	private static final char PADDING_CHAR = 'X';
 
 	public String genKey(int length) {

@@ -3,7 +3,7 @@ package model.clasic;
 import Tool.Alphabet;
 import  java.util.Random;
 
-public class VigenereCypher {
+public class VigenereCipher {
 	public String genKey(String alphabet, int length) {
 		if (length <= 0) return "";
 		Random rand = new Random();

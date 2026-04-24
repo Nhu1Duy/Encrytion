@@ -7,7 +7,7 @@ import java.util.Random;
  * E(x) = (a*x + b) mod m,  D(y) = a⁻¹*(y - b) mod m
  */
 
-public class AffineCypher {
+public class AffineCipher {
 	public int[] genKey(int n) {
         Random rand = new Random();
         int a;

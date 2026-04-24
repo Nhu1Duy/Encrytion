@@ -1,7 +1,7 @@
 package model.clasic;
 import Tool.Alphabet;
 
-public class CaesarCypher {
+public class CaesarCipher {
 	public int genKey(int max) {
 		return (int) (Math.random() * max) + 1;
 	}
