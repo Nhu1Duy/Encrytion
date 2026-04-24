@@ -109,7 +109,7 @@ public class CryptoController {
 
 	private void switchMethod(String methodId, String title) {
 		this.currentMethod = methodId;
-		view.setMethodTitle(title);
+		//view.setMethodTitle(title);
 		view.showLayout(methodId);
 	}
 

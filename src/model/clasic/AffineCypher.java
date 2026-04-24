@@ -3,6 +3,10 @@ package model.clasic;
 import Tool.Alphabet;
 import java.util.Random;
 
+/*
+ * E(x) = (a*x + b) mod m,  D(y) = a⁻¹*(y - b) mod m
+ */
+
 public class AffineCypher {
 	public int[] genKey(int n) {
         Random rand = new Random();
