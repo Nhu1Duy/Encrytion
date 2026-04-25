@@ -12,7 +12,7 @@ import java.util.List;
 public class SubstitutionCipher implements ClassicCipher{
 
 	/// --- GEN KEY ---
-    public String genKey(String alphabet) {
+    public static String genKey(String alphabet) {
         List<Character> chars = new ArrayList<>(alphabet.length());
         for (char c : alphabet.toCharArray()) chars.add(c);
         Collections.shuffle(chars);

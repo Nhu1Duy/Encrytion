@@ -4,7 +4,7 @@ import Tool.Alphabet;
 public class CaesarCipher implements ClassicCipher{
 	
 	/// --- GEN KEY ---
-	public int genKey(int max) {
+	public static int genKey(int max) {
 		return (int) (Math.random() * max) + 1;
 	}
 	

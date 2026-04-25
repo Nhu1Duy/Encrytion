@@ -1,4 +1,5 @@
 package controller;
+
 import model.clasic.AffineCipher;
 import model.clasic.CaesarCipher;
 import model.clasic.HillCipher;
@@ -6,257 +7,318 @@ import model.clasic.PermutationCipher;
 import model.clasic.SubstitutionCipher;
 import model.clasic.VigenereCipher;
 import view.MainFrame;
+import Tool.Alphabet;
 
 import java.util.HashSet;
 import java.util.Set;
-
 import javax.swing.JOptionPane;
 
+/**
+ * CryptoController – kết nối View và Model theo mô hình MVC.
+ *
+ * Quy ước method ID (dùng trong CardLayout và switch-case):
+ *   "Caesar"       – Dịch Chuyển
+ *   "Substitution" – Thay Thế
+ *   "Affine"       – Affine
+ *   "Vigenere"     – Vigenere
+ *   "Hill"         – Hill
+ *   "Permutation"  – Hoán Vị
+ */
 public class CryptoController {
-	private MainFrame view;
-	private CaesarCipher caesarCypher;
-	private SubstitutionCipher substitutionCipher;
-	private VigenereCipher vigenereCipher;
-	private AffineCipher affineCypher;
-	private HillCipher hillCyper;
-	private PermutationCipher permutationCypher;
-	private String currentMethod = "Dịch Chuyển";
-	private String currentLanguage = "VN";
 
-	public CryptoController(MainFrame view) {
-		this.view = view;
-		this.caesarCypher = new CaesarCipher();
-		this.substitutionCipher = new SubstitutionCipher();
-		this.vigenereCipher = new VigenereCipher();
-		this.affineCypher = new AffineCipher();
-		this.hillCyper = new HillCipher();
-		this.permutationCypher = new PermutationCipher();
+    // ── Constants ────────────────────────────────────────────────
+    private static final String METHOD_CAESAR       = "Caesar";
+    private static final String METHOD_SUBSTITUTION = "Substitution";
+    private static final String METHOD_AFFINE       = "Affine";
+    private static final String METHOD_VIGENERE     = "Vigenere";
+    private static final String METHOD_HILL         = "Hill";
+    private static final String METHOD_PERMUTATION  = "Permutation";
 
-		view.getItemCaesar().addActionListener(e -> switchMethod("Dịch Chuyển", "Caesar"));
-		view.getItemVigenere().addActionListener(e -> switchMethod("Vigenere", "Vigenere"));
-		view.getItemSubstitution().addActionListener(e -> switchMethod("Thay Thế", "Substitution"));
-		view.getItemAffine().addActionListener(e -> switchMethod("Affine", "Affine (Mã hóa tuyến tính)"));
-		view.getItemHill().addActionListener(e -> switchMethod("Hill", "Hill (Mã hóa ma trận)"));
-		view.getItemPermutation().addActionListener(e -> switchMethod("Hoán Vị", "Hoán vị (Permutation)"));
-		view.getItemVN().addActionListener(e -> {
-			currentLanguage = "VN";
-			view.setLanguageStatus("VN");
-		});
+    private static final String LANG_VN = "VN";
+    private static final String LANG_EN = "EN";
 
-		view.getItemEN().addActionListener(e -> {
-			currentLanguage = "EN";
-			view.setLanguageStatus("EN");
-		});
-		view.getEncryptBtn().addActionListener(e -> handleAction(true));
-		view.getDecryptBtn().addActionListener(e -> handleAction(false));
-		
-		/// --- GENKEY ---
-		view.getCaesarPanel().getGenBtn().addActionListener(e -> {
-			try {
-				String maxStr = view.getCaesarPanel().getTextKeyLenField().trim();
-				int max = maxStr.isEmpty() ? 188 : Integer.parseInt(maxStr);
-				int randomKey = caesarCypher.genKey(max);
+    // ── Fields ───────────────────────────────────────────────────
+    private final MainFrame view;
 
-				view.getCaesarPanel().setKeyField((String.valueOf(randomKey)));
-			} catch (NumberFormatException ex) {
-				JOptionPane.showMessageDialog(null, "Giới hạn phải là một số nguyên dương!");
-			}
-		});
-		view.getSubstitutionPanel().getGenBtn().addActionListener(e -> {
-			String alphabet = currentLanguage.equals("VN") ? Tool.Alphabet.VN_ALPHABET_FUL
-					: Tool.Alphabet.EN_ALPHABET_FUL;
-			String randomKey = SubstitutionCipher.genKeySubstitutionCipher(alphabet);
+    private final CaesarCipher       caesarCipher       = new CaesarCipher();
+    private final SubstitutionCipher  substitutionCipher = new SubstitutionCipher();
+    private final VigenereCipher      vigenereCipher     = new VigenereCipher();
+    private final AffineCipher        affineCipher       = new AffineCipher();
+    private final HillCipher          hillCipher         = new HillCipher();
+    private final PermutationCipher   permutationCipher  = new PermutationCipher();
 
-			view.getSubstitutionPanel().getKeyArea().setText(randomKey);
-		});
-		view.getAffinePanel().getGenBtn().addActionListener(e -> {
-			int n = currentLanguage.equals("VN") ? Tool.Alphabet.VN_ALPHABET_FUL.length()
-					: Tool.Alphabet.EN_ALPHABET_FUL.length();
+    private String currentMethod   = METHOD_CAESAR;
+    private String currentLanguage = LANG_VN;
 
-			int[] keys = affineCypher.genKey(n);
+    // Hill: lưu key matrix và độ dài gốc để decrypt đúng
+    private int[][] hillKeyMatrix    = null;
+    private int     hillOriginalLen  = -1;
 
-			view.getAffinePanel().getKeyA().setText(String.valueOf(keys[0]));
-			view.getAffinePanel().getKeyB().setText(String.valueOf(keys[1]));
-		});
+    // ── Constructor ──────────────────────────────────────────────
+    public CryptoController(MainFrame view) {
+        this.view = view;
+        bindMenuListeners();
+        bindActionListeners();
+        bindGenKeyListeners();
+    }
 
-		view.getVigenerePanel().getGenBtn().addActionListener(e -> {
-			try {
-				String lenStr = view.getVigenerePanel().getTextKeyLenField();
-				int length = lenStr.isEmpty() ? 8 : Integer.parseInt(lenStr);
-				String alphabet = currentLanguage.equals("VN") ? Tool.Alphabet.VN_ALPHABET_FUL
-						: Tool.Alphabet.EN_ALPHABET_FUL;
+    // ── Bind menu ────────────────────────────────────────────────
+    private void bindMenuListeners() {
+        view.getItemCaesar()      .addActionListener(e -> switchMethod(METHOD_CAESAR));
+        view.getItemSubstitution().addActionListener(e -> switchMethod(METHOD_SUBSTITUTION));
+        view.getItemAffine()      .addActionListener(e -> switchMethod(METHOD_AFFINE));
+        view.getItemVigenere()    .addActionListener(e -> switchMethod(METHOD_VIGENERE));
+        view.getItemHill()        .addActionListener(e -> switchMethod(METHOD_HILL));
+        view.getItemPermutation() .addActionListener(e -> switchMethod(METHOD_PERMUTATION));
 
-				String randomKey = vigenereCipher.genKey(alphabet, length);
-				view.getVigenerePanel().getKeyField().setText(randomKey);
-			} catch (NumberFormatException ex) {
-				JOptionPane.showMessageDialog(null, "Độ dài khóa phải là số nguyên dương!");
-			}
-		});
-		view.getPermutationPanel().getGenBtn().addActionListener(e -> {
-			try {
-				String lenStr = view.getPermutationPanel().getLenField().getText();
-				int length = lenStr.isEmpty() ? 5 : Integer.parseInt(lenStr);
+        view.getItemVN().addActionListener(e -> {
+            currentLanguage = LANG_VN;
+            view.setLanguageStatus(LANG_VN);
+        });
+        view.getItemEN().addActionListener(e -> {
+            currentLanguage = LANG_EN;
+            view.setLanguageStatus(LANG_EN);
+        });
+    }
 
-				String randomKey = permutationCypher.genKey(length);
+    // ── Bind encrypt/decrypt buttons ─────────────────────────────
+    private void bindActionListeners() {
+        view.getEncryptBtn().addActionListener(e -> handleAction(true));
+        view.getDecryptBtn().addActionListener(e -> handleAction(false));
+    }
 
-				 view.getPermutationPanel().getKeyField().setText(randomKey);
+    // ── Bind Gen Key buttons ─────────────────────────────────────
+    private void bindGenKeyListeners() {
+        // Caesar
+        view.getCaesarPanel().getGenBtn().addActionListener(e -> {
+            try {
+                String maxStr = view.getCaesarPanel().getTextKeyLenField().trim();
+                int max = maxStr.isEmpty() ? alphabetSize() : Integer.parseInt(maxStr);
+                int key = caesarCipher.genKey(max);
+                view.getCaesarPanel().setKeyField(String.valueOf(key));
+            } catch (NumberFormatException ex) {
+                showError("Giới hạn phải là số nguyên dương!");
+            }
+        });
 
-			} catch (NumberFormatException ex) {
-				JOptionPane.showMessageDialog(null, "Độ dài khóa hoán vị phải là số nguyên!");
-			}
-		});
-	}
+        // Substitution
+        view.getSubstitutionPanel().getGenBtn().addActionListener(e -> {
+            String key = substitutionCipher.genKey(currentAlphabet());
+            view.getSubstitutionPanel().getKeyArea().setText(key);
+        });
 
-	private void switchMethod(String methodId, String title) {
-		this.currentMethod = methodId;
-		//view.setMethodTitle(title);
-		view.showLayout(methodId);
-	}
+        // Affine
+        view.getAffinePanel().getGenBtn().addActionListener(e -> {
+            int[] keys = affineCipher.genKey(alphabetSize());
+            view.getAffinePanel().getKeyA().setText(String.valueOf(keys[0]));
+            view.getAffinePanel().getKeyB().setText(String.valueOf(keys[1]));
+        });
 
-	private void handleAction(boolean isEncrypt) {
-		String input = view.getInputArea().getText().trim();
+        // Vigenere
+        view.getVigenerePanel().getGenBtn().addActionListener(e -> {
+            try {
+                String lenStr = view.getVigenerePanel().getTextKeyLenField().trim();
+                int length = lenStr.isEmpty() ? 8 : Integer.parseInt(lenStr);
+                String key = vigenereCipher.genKey(currentAlphabet(), length);
+                view.getVigenerePanel().getKeyField().setText(key);
+            } catch (NumberFormatException ex) {
+                showError("Độ dài khóa phải là số nguyên dương!");
+            }
+        });
 
-		if (input.isEmpty()) {
-			JOptionPane.showMessageDialog(null, "Vui lòng nhập văn bản!");
-			return;
-		}
+        // Hill
+        view.getHillPanel().getGenBtn().addActionListener(e -> {
+            try {
+                String sizeStr = view.getHillPanel().getSizeField().trim();
+                int n = sizeStr.isEmpty() ? 2 : Integer.parseInt(sizeStr);
+                if (n < 2 || n > 5) throw new IllegalArgumentException("Kích thước ma trận phải từ 2 đến 5!");
 
-		try {
-			String result = "";
+                hillKeyMatrix = isVN()
+                        ? hillCipher.generateKeyVN(n)
+                        : hillCipher.generateKeyEN(n);
+                hillOriginalLen = -1; // reset khi gen key mới
 
-			switch (currentMethod) {
+                String display = hillCipher.matrixToKey(hillKeyMatrix);
+                view.getHillPanel().setKeyDisplay(display);
+            } catch (NumberFormatException ex) {
+                showError("Kích thước ma trận phải là số nguyên!");
+            } catch (IllegalArgumentException ex) {
+                showError(ex.getMessage());
+            }
+        });
 
-			/// --- CAESAR ---
-			case "Dịch Chuyển": {
-				String keyStr = view.getCaesarPanel().getTextKeyField().trim();
-				if (keyStr.isEmpty()) {
-					throw new Exception("Vui lòng nhập Key hoặc nhấn 'Gen' để tạo khóa!");
-				}
-				int k = Integer.parseInt(keyStr);
+        // Permutation
+        view.getPermutationPanel().getGenBtn().addActionListener(e -> {
+            try {
+                String lenStr = view.getPermutationPanel().getLenField().getText().trim();
+                int length = lenStr.isEmpty() ? 5 : Integer.parseInt(lenStr);
+                String key = permutationCipher.genKey(length);
+                view.getPermutationPanel().getKeyField().setText(key);
+            } catch (NumberFormatException ex) {
+                showError("Độ dài khóa hoán vị phải là số nguyên dương!");
+            }
+        });
+    }
 
-				if (currentLanguage.equals("VN")) {
-					result = isEncrypt ? caesarCypher.encryptVN(input, k) : caesarCypher.decryptVN(input, k);
-				} else {
-					result = isEncrypt ? caesarCypher.encryptEN(input, k) : caesarCypher.decryptEN(input, k);
-				}
-				break;
-			}
+    // ── Switch method ────────────────────────────────────────────
+    private void switchMethod(String methodId) {
+        currentMethod = methodId;
+        view.showLayout(methodId);
+    }
 
+    // ── Main encrypt/decrypt handler ─────────────────────────────
+    private void handleAction(boolean isEncrypt) {
+        String input = view.getInputArea().getText().trim();
+        if (input.isEmpty()) {
+            showError("Vui lòng nhập văn bản!");
+            return;
+        }
 
-			/// ---  SUBSTITUTION ---
-			case "Thay Thế": {
-			    try {
-			        String key = view.getSubstitutionPanel().getKeyArea().getText();
-			        if (key == null || key.isEmpty())
-			            throw new Exception("Key không được để trống");
-			        
-			        String alphabet = currentLanguage.equals("VN") ? Tool.Alphabet.VN_ALPHABET_FUL : Tool.Alphabet.EN_ALPHABET_FUL;
-			        int requiredLength = alphabet.length();
+        try {
+            String result = switch (currentMethod) {
+                case METHOD_CAESAR       -> handleCaesar(input, isEncrypt);
+                case METHOD_SUBSTITUTION -> handleSubstitution(input, isEncrypt);
+                case METHOD_AFFINE       -> handleAffine(input, isEncrypt);
+                case METHOD_VIGENERE     -> handleVigenere(input, isEncrypt);
+                case METHOD_HILL         -> handleHill(input, isEncrypt);
+                case METHOD_PERMUTATION  -> handlePermutation(input, isEncrypt);
+                default -> throw new IllegalStateException("Phương pháp không hợp lệ: " + currentMethod);
+            };
+            view.getOutputArea().setText(result);
 
-			        if (key.length() != requiredLength) {
-			            throw new Exception("Key phải dài đúng " + requiredLength + " kí tự");
-			        }
+        } catch (NumberFormatException ex) {
+            showError("Khóa phải là số hợp lệ!");
+        } catch (Exception ex) {
+            showError(ex.getMessage());
+        }
+    }
 
-			        Set<Character> charSet = new HashSet<>();
-			        for (char c : key.toCharArray()) {
-			            if (alphabet.indexOf(c) == -1) {
-			                throw new Exception("Ký tự '" + c + "' không nằm trong bảng chữ cái nguồn");
-			            }
-			            if (!charSet.add(c)) {
-			                throw new Exception("Khóa không được chứa ký tự lặp lại: " + c);
-			            }
-			        }
-			        if (currentLanguage.equals("VN")) {
-			            result = isEncrypt ? substitutionCipher.encryptVN(input, key)
-			                               : substitutionCipher.decryptVN(input, key);
-			        } else {
-			            result = isEncrypt ? substitutionCipher.encryptEN(input, key)
-			                               : substitutionCipher.decryptEN(input, key);
-			        }
-			        
-			    } catch (Exception e) {
-			        throw new Exception(e.getMessage()); 
-			    }
-			    break;
-			}
+    // ── Cipher handlers ──────────────────────────────────────────
 
-			/// --- AFFINE --- 
-			case "Affine": {
-				String aStr = view.getAffinePanel().getTextKeyA().trim();
-				String bStr = view.getAffinePanel().getTextKeyB().trim();
+    private String handleCaesar(String input, boolean isEncrypt) throws Exception {
+        String keyStr = view.getCaesarPanel().getTextKeyField().trim();
+        if (keyStr.isEmpty()) throw new Exception("Vui lòng nhập khóa hoặc nhấn 'Gen Key' để tạo!");
+        // Delegate parsing to model (parseKey inside CaesarCipher accepts String)
+        return isEncrypt
+                ? (isVN() ? caesarCipher.encryptVN(input, keyStr) : caesarCipher.encryptEN(input, keyStr))
+                : (isVN() ? caesarCipher.decryptVN(input, keyStr) : caesarCipher.decryptEN(input, keyStr));
+    }
 
-				if (aStr.isEmpty() || bStr.isEmpty()) {
-					throw new Exception("Key a và b không được để trống");
-				}
+    private String handleSubstitution(String input, boolean isEncrypt) throws Exception {
+        String key = view.getSubstitutionPanel().getKeyArea().getText().trim();
+        if (key.isEmpty()) throw new Exception("Khóa không được để trống!");
+        validateSubstitutionKey(key);
+        return isEncrypt
+                ? (isVN() ? substitutionCipher.encryptVN(input, key) : substitutionCipher.encryptEN(input, key))
+                : (isVN() ? substitutionCipher.decryptVN(input, key) : substitutionCipher.decryptEN(input, key));
+    }
 
-				int a = Integer.parseInt(aStr);
-				int b = Integer.parseInt(bStr);
-				if (a == 1 && b == 0 || b == 1 && a == 0) {
-					throw new Exception(" Bộ khóa (1, 0) sẽ không làm thay đổi văn bản!");
-				}
-				int inverse = currentLanguage.equals("VN") ? affineCypher.reverseVN(a) : affineCypher.reverseEN(a);
+    private String handleAffine(String input, boolean isEncrypt) throws Exception {
+        String aStr = view.getAffinePanel().getTextKeyA().trim();
+        String bStr = view.getAffinePanel().getTextKeyB().trim();
+        if (aStr.isEmpty() || bStr.isEmpty()) throw new Exception("Cả a và b không được để trống!");
 
-				if (inverse == -1) {
-					throw new Exception("Giá trị a không hợp lệ (không có nghịch đảo modulo)");
-				}
+        int a = Integer.parseInt(aStr);
+        int b = Integer.parseInt(bStr);
+        validateAffineKey(a, b);
 
-				if (currentLanguage.equals("VN")) {
-					result = isEncrypt ? affineCypher.encryptVN(input, a, b) : affineCypher.decryptVN(input, a, b);
-				} else {
-					result = isEncrypt ? affineCypher.encryptEN(input, a, b) : affineCypher.decryptEN(input, a, b);
-				}
-				break;
-			}
+        // Model nhận key dạng "a,b"
+        String key = a + "," + b;
+        return isEncrypt
+                ? (isVN() ? affineCipher.encryptVN(input, key) : affineCipher.encryptEN(input, key))
+                : (isVN() ? affineCipher.decryptVN(input, key) : affineCipher.decryptEN(input, key));
+    }
 
-			/// ---  VIGENERE --- 
-			case "Vigenere": {
-				String key = view.getVigenerePanel().getKeyField().getText().trim();
-				if (key.isEmpty())
-					throw new Exception("Key không được để trống");
+    private String handleVigenere(String input, boolean isEncrypt) throws Exception {
+        String key = view.getVigenerePanel().getKeyField().getText().trim();
+        if (key.isEmpty()) throw new Exception("Khóa không được để trống!");
+        return isEncrypt
+                ? (isVN() ? vigenereCipher.encryptVN(input, key) : vigenereCipher.encryptEN(input, key))
+                : (isVN() ? vigenereCipher.decryptVN(input, key) : vigenereCipher.decryptEN(input, key));
+    }
 
-				if (currentLanguage.equals("VN")) {
-					result = isEncrypt ? vigenereCipher.encryptVN(input, key) : vigenereCipher.decryptVN(input, key);
-				} else {
-					result = isEncrypt ? vigenereCipher.encryptEN(input, key) : vigenereCipher.decryptEN(input, key);
-				}
-				break;
-			}
+    private String handleHill(String input, boolean isEncrypt) throws Exception {
+        if (hillKeyMatrix == null)
+            throw new Exception("Vui lòng nhấn 'Gen Key' để tạo khóa Hill trước!");
 
-			/// ---  HILL --- 
-			case "Hill": {
-				String hillKey = view.getHillPanel().getKeyField().getText().trim();
-				if (hillKey.isEmpty()) {
-					throw new Exception("Key Hill không được để trống");
-				}
+        if (isEncrypt) {
+            // Đếm ký tự thuộc alphabet để lưu originalLength cho decrypt
+            String alpha = currentAlphabet();
+            hillOriginalLen = (int) input.codePoints()
+                    .filter(cp -> alpha.contains(new String(Character.toChars(cp))))
+                    .count();
 
-				result = "🚧 ARE YOU BLIND ---- YOU PIGGYYYYYYYYYYYYYYYYY";
-				break;
-			}
+            return isVN()
+                    ? hillCipher.encryptVN(input, hillKeyMatrix)
+                    : hillCipher.encryptEN(input, hillKeyMatrix);
+        } else {
+            if (hillOriginalLen < 0)
+                throw new Exception("Hãy mã hóa văn bản trước rồi mới giải mã (cần biết độ dài gốc)!");
+            return isVN()
+                    ? hillCipher.decryptVN(input, hillKeyMatrix, hillOriginalLen)
+                    : hillCipher.decryptEN(input, hillKeyMatrix, hillOriginalLen);
+        }
+    }
 
-			/// --- PERMUTATION --- 
-			case "Hoán Vị": {
-				String permKey = view.getPermutationPanel().getKeyField().getText().trim();
-				if (permKey.isEmpty()) {
-					throw new Exception("Key hoán vị không được để trống");
-				}
+    private String handlePermutation(String input, boolean isEncrypt) throws Exception {
+        String key = view.getPermutationPanel().getKeyField().getText().trim();
+        if (key.isEmpty()) throw new Exception("Khóa hoán vị không được để trống!");
+        return isEncrypt
+                ? (isVN() ? permutationCipher.encryptVN(input, key) : permutationCipher.encryptEN(input, key))
+                : (isVN() ? permutationCipher.decryptVN(input, key) : permutationCipher.decryptEN(input, key));
+    }
 
-				result = isEncrypt ? permutationCypher.encrypt(input, permKey)
-						: permutationCypher.decrypt(input, permKey);
-				break;
-			}
+    // ── Validation helpers ────────────────────────────────────────
 
-			///--- DEFAULT --- 
-			default:
-				throw new Exception("Phương pháp không hợp lệ");
-			}
+    private void validateSubstitutionKey(String key) throws Exception {
+        String alpha = currentAlphabet();
+        long alphaSize = alpha.codePoints().count();
+        long keySize   = key.codePoints().count();
 
-			view.getOutputArea().setText(result);
+        if (keySize != alphaSize)
+            throw new Exception("Khóa phải có đúng " + alphaSize + " ký tự (hiện tại: " + keySize + ")!");
 
-		} catch (NumberFormatException ex) {
-			JOptionPane.showMessageDialog(null, "Key phải là số hợp lệ!");
-		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(null, "Lỗi: " + ex.getMessage());
-		}
-	}
+        // Kiểm tra mỗi ký tự thuộc alphabet và không trùng
+        Set<Integer> seen = new HashSet<>();
+        int[] alphaCps = alpha.codePoints().toArray();
+        for (int cp : key.codePoints().toArray()) {
+            boolean inAlpha = false;
+            for (int a : alphaCps) if (a == cp) { inAlpha = true; break; }
+            if (!inAlpha)
+                throw new Exception("Ký tự '" + new String(Character.toChars(cp)) + "' không thuộc bảng chữ cái!");
+            if (!seen.add(cp))
+                throw new Exception("Khóa chứa ký tự trùng lặp: '" + new String(Character.toChars(cp)) + "'!");
+        }
+    }
 
+    private void validateAffineKey(int a, int b) throws Exception {
+        int m = alphabetSize();
+        if (a <= 0) throw new Exception("Hệ số a phải là số nguyên dương!");
+        if (b < 0)  throw new Exception("Hệ số b phải là số không âm!");
+        if (!isCoprime(a, m))
+            throw new Exception("Hệ số a=" + a + " không hợp lệ: gcd(a, " + m + ") ≠ 1 (không có nghịch đảo modulo)!");
+        if (a == 1 && b == 0)
+            throw new Exception("Bộ khóa (1, 0) không thay đổi văn bản — hãy chọn khóa khác!");
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────
+
+    private boolean isVN() { return LANG_VN.equals(currentLanguage); }
+
+    private String currentAlphabet() {
+        return isVN() ? Alphabet.VN_ALPHABET_FUL : Alphabet.EN_ALPHABET_FUL;
+    }
+
+    private int alphabetSize() {
+        return (int) currentAlphabet().codePoints().count();
+    }
+
+    private boolean isCoprime(int a, int m) {
+        while (m != 0) { int t = m; m = a % m; a = t; }
+        return a == 1;
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(null, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
 }

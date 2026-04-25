@@ -11,7 +11,7 @@ public class PermutationCipher implements ClassicCipher{
 	private static final char PADDING = 'X';
 
 	/// --- GEN KEY ---
-	public String genKey(int length) {
+	public static String genKey(int length) {
 		if (length <= 0)
 			return "";
 		List<Integer> numbers = new ArrayList<>();

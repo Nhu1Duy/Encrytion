@@ -8,7 +8,7 @@ import java.util.Random;
  */
 public class VigenereCipher implements ClassicCipher {
 	/// --- GEN KEY ---
-	public String genKey(String alphabet, int length) {
+	public static String genKey(String alphabet, int length) {
 		if (length <= 0)
 			return "";
 		Random rand = new Random();

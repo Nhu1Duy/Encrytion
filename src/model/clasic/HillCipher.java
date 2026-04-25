@@ -259,40 +259,4 @@ public class HillCipher implements ClassicCipher {
         return codePointCount(fallback);
     }
 
-
-    public static void main(String[] args) {
-    	HillCipher hill = new HillCipher();
-
-        System.out.println("===== TIẾNG ANH =====");
-        int[][] keyEN  = hill.generateKeyEN(2);
-        String  plainEN = "Hello123";
-        int     lenEN   = (int) plainEN.codePoints().count();
-        String  encEN   = hill.encryptEN(plainEN, keyEN);
-        String  decEN   = hill.decryptEN(encEN, keyEN, lenEN);
-        System.out.println("Plain    : " + plainEN);
-        System.out.println("Encrypted: " + encEN);
-        System.out.println("Decrypted: " + decEN);
-        System.out.println("OK? " + plainEN.equals(decEN));
-
-        System.out.println("\n===== TIẾNG VIỆT =====");
-        int[][] keyVN  = hill.generateKeyVN(2);
-        String  plainVN = "Xin chào Việt Nam 123";
-        int     lenVN   = (int) plainVN.codePoints().count();
-        String  encVN   = hill.encryptVN(plainVN, keyVN);
-        String  decVN   = hill.decryptVN(encVN, keyVN, lenVN);
-        System.out.println("Plain    : " + plainVN);
-        System.out.println("Encrypted: " + encVN);
-        System.out.println("Decrypted: " + decVN);
-        System.out.println("OK? " + plainVN.equals(decVN));
-
-        System.out.println("\n===== QUA INTERFACE (String key) =====");
-        ClassicCipher c    = new HillCipher();
-        String sKey = hill.matrixToKey(keyEN, lenEN);
-        System.out.println("Key string: " + sKey);
-        String enc2 = c.encryptEN(plainEN, sKey);
-        String dec2 = c.decryptEN(enc2, sKey);
-        System.out.println("Encrypted: " + enc2);
-        System.out.println("Decrypted: " + dec2);
-        System.out.println("OK? " + plainEN.equals(dec2));
-    }
 }
