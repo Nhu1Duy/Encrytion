@@ -1,15 +1,14 @@
 package view;
 
-import java.awt.BorderLayout;
 import javax.swing.*;
+import java.awt.BorderLayout;
 
-public class SubstitutionConfigPanel extends JPanel {
+public class SubstitutionConfigPanel extends JPanel implements KeyPanel {
     private JTextArea keyArea;
-    private JButton genBtn;
+    private JButton   genBtn;
 
     public SubstitutionConfigPanel() {
         setLayout(new BorderLayout());
-
         setBorder(BorderFactory.createTitledBorder("Bảng thay thế (Key)"));
 
         keyArea = new JTextArea(2, 20);
@@ -22,11 +21,12 @@ public class SubstitutionConfigPanel extends JPanel {
         add(genBtn, BorderLayout.SOUTH);
     }
 
-    public JTextArea getKeyArea() {
-        return keyArea;
-    }
+    // ── Getters ──────────────────────────────────────────────────
+    public JTextArea getKeyArea() { return keyArea; }
+    public JButton   getGenBtn()  { return genBtn; }
 
-    public JButton getGenBtn() {
-        return genBtn;
-    }
+    // ── KeyPanel ─────────────────────────────────────────────────
+    /** Format: chuỗi hoán vị đầy đủ alphabet */
+    @Override public String getKeyText()         { return keyArea.getText().trim(); }
+    @Override public void   setKeyText(String key){ keyArea.setText(key.trim()); }
 }

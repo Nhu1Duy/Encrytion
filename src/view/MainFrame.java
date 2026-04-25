@@ -2,7 +2,6 @@ package view;
 
 import java.awt.*;
 import java.net.URL;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -11,232 +10,299 @@ import javax.swing.border.TitledBorder;
 import controller.CryptoController;
 
 public class MainFrame {
-	JFrame frame = new JFrame();
-	private CaesarConfigPanel caesarPanel;
-	private SubstitutionConfigPanel substitutionPanel;
-	private AffineConfigPanel affinePanel;
-	private VigenereConfigPanel vigenerePanel;
-	private HillConfigPanel hillPanel;
-	private PermutationConfigPanel permutationPanel;
+    public JFrame frame = new JFrame();
+    private CaesarConfigPanel       caesarPanel;
+    private SubstitutionConfigPanel  substitutionPanel;
+    private AffineConfigPanel        affinePanel;
+    private VigenereConfigPanel      vigenerePanel;
+    private HillConfigPanel          hillPanel;
+    private PermutationConfigPanel   permutationPanel;
 
-	private JTextArea inputArea, outputArea;
-	private JButton encryptBtn, decryptBtn;
-	private JPanel cardPanel;
-	private CardLayout cardLayout;
-	private JLabel statusLabel;
+    private JTextArea    inputArea, outputArea;
+    private JButton      encryptBtn, decryptBtn;
+    private JPanel       cardPanel;
+    private CardLayout   cardLayout;
+    private JLabel       statusLabel;
 
-	private JMenuItem itemCaesar = new JMenuItem("Dịch Chuyển (Caesar)");
-	private JMenuItem itemSubstitution = new JMenuItem("Thay Thế (Substitution)");
-	private JMenuItem itemAffine = new JMenuItem("Affine");
-	private JMenuItem itemVigenere = new JMenuItem("Vigenere");
-	private JMenuItem itemHill = new JMenuItem("Hill (Ma trận)");
-	private JMenuItem itemPermutation = new JMenuItem("Hoán Vị (Permutation)");
-	private JMenuItem itemVN = new JMenuItem("Tiếng Việt");
-	private JMenuItem itemEN = new JMenuItem("English");
+    // ── Thuật toán menu ──────────────────────────────────────────
+    private JMenuItem itemCaesar       = new JMenuItem("Dịch Chuyển (Caesar)");
+    private JMenuItem itemSubstitution = new JMenuItem("Thay Thế (Substitution)");
+    private JMenuItem itemAffine       = new JMenuItem("Affine");
+    private JMenuItem itemVigenere     = new JMenuItem("Vigenere");
+    private JMenuItem itemHill         = new JMenuItem("Hill (Ma trận)");
+    private JMenuItem itemPermutation  = new JMenuItem("Hoán Vị (Permutation)");
 
-	public MainFrame() {
-		frame.setTitle("Công cụ mã hóa chuyên nghiệp");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(900, 600);
-		frame.setLayout(new BorderLayout(10, 10));
-		URL iconURL = getClass().getResource("icon.png");
-		ImageIcon icon = new ImageIcon(iconURL);
-		frame.setIconImage(icon.getImage());
+    // ── Ngôn ngữ menu ────────────────────────────────────────────
+    private JMenuItem itemVN = new JMenuItem("Tiếng Việt");
+    private JMenuItem itemEN = new JMenuItem("English");
 
-		/// --- HEADER ---
-		JPanel header = new JPanel(new BorderLayout());
-		header.setBackground(new Color(45, 45, 45));
-		header.setBorder(new EmptyBorder(10, 15, 10, 15));
+    // ── File menu ────────────────────────────────────────────────
+    private JMenuItem itemImportInput  = new JMenuItem("Import Input…");
+    private JMenuItem itemSaveOutput   = new JMenuItem("Save Output…");
+    private JMenuItem itemImportKey    = new JMenuItem("Import Key…");
+    private JMenuItem itemSaveKey      = new JMenuItem("Save Key…");
+    private JMenuItem itemClearAll     = new JMenuItem("Xóa tất cả");
 
-		JLabel titleLabel = new JLabel("CRYPTOGRAPHY TOOL");
-		titleLabel.setForeground(Color.WHITE);
-		titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+    // ── Constructor ──────────────────────────────────────────────
+    public MainFrame() {
+        frame.setTitle("Công cụ mã hóa chuyên nghiệp");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(900, 600);
+        frame.setLayout(new BorderLayout(10, 10));
 
-		statusLabel = new JLabel("Ngôn ngữ: Tiếng Việt (VN)");
-		statusLabel.setForeground(new Color(200, 200, 200));
+        URL iconURL = getClass().getResource("icon.png");
+        if (iconURL != null) {
+            frame.setIconImage(new ImageIcon(iconURL).getImage());
+        }
 
-		header.add(titleLabel, BorderLayout.WEST);
-		header.add(statusLabel, BorderLayout.EAST);
-		frame.add(header, BorderLayout.NORTH);
+        buildHeader();
+        buildLeftPanel();
+        buildCenterPanel();
+        setupMenuBar();
 
-		/// --- LEFT PANEL ----
-		JPanel leftPanel = new JPanel();
-		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
-		leftPanel.setPreferredSize(new Dimension(300, 0));
-		leftPanel.setBorder(new EmptyBorder(10, 10, 10, 0));
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
 
-		cardLayout = new CardLayout();
-		cardPanel = new JPanel(cardLayout);
-		cardPanel.setBorder(BorderFactory.createTitledBorder("Cấu hình Thuật toán"));
+    // ── Build sections ───────────────────────────────────────────
 
-		initCardPanels();
-		showLayout("Caesar");
+    private void buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(45, 45, 45));
+        header.setBorder(new EmptyBorder(10, 15, 10, 15));
 
-		JPanel btnPanel = new JPanel(new GridLayout(1, 2, 10, 0));
-		btnPanel.setMaximumSize(new Dimension(300, 50));
-		encryptBtn = new JButton("ENCRYPT ▲");
-		decryptBtn = new JButton("DECRYPT ▼");
-		encryptBtn.setBackground(new Color(0, 123, 255));
-		encryptBtn.setForeground(Color.WHITE);
-		btnPanel.add(encryptBtn);
-		btnPanel.add(decryptBtn);
+        JLabel titleLabel = new JLabel("CRYPTOGRAPHY TOOL");
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
 
-		leftPanel.add(cardPanel);
-		leftPanel.add(Box.createVerticalStrut(10));
-		leftPanel.add(btnPanel);
+        statusLabel = new JLabel("Ngôn ngữ: Tiếng Việt (VN)");
+        statusLabel.setForeground(new Color(200, 200, 200));
 
-		frame.add(leftPanel, BorderLayout.WEST);
+        header.add(titleLabel, BorderLayout.WEST);
+        header.add(statusLabel, BorderLayout.EAST);
+        frame.add(header, BorderLayout.NORTH);
+    }
 
-		/// --- CENTER PANEL ---
-		JPanel centerPanel = new JPanel(new GridLayout(2, 1, 0, 10));
-		centerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+    private void buildLeftPanel() {
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setPreferredSize(new Dimension(300, 0));
+        leftPanel.setBorder(new EmptyBorder(10, 10, 10, 0));
 
-		inputArea = new JTextArea();
-		inputArea.setLineWrap(true);
-		JScrollPane scrollIn = new JScrollPane(inputArea);
-		scrollIn.setBorder(BorderFactory.createTitledBorder("Dữ liệu gốc (Input)"));
+        cardLayout = new CardLayout();
+        cardPanel  = new JPanel(cardLayout);
+        cardPanel.setBorder(BorderFactory.createTitledBorder("Cấu hình Thuật toán"));
 
-		outputArea = new JTextArea();
-		outputArea.setLineWrap(true);
-		outputArea.setEditable(false);
-		outputArea.setBackground(new Color(245, 245, 245));
-		JScrollPane scrollOut = new JScrollPane(outputArea);
-		scrollOut.setBorder(BorderFactory.createTitledBorder("Kết quả (Output)"));
+        initCardPanels();
+        showLayout("Caesar");
 
-		centerPanel.add(scrollIn);
-		centerPanel.add(scrollOut);
+        JPanel btnPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+        btnPanel.setMaximumSize(new Dimension(300, 50));
+        encryptBtn = new JButton("ENCRYPT ▲");
+        decryptBtn = new JButton("DECRYPT ▼");
+        encryptBtn.setBackground(new Color(0, 123, 255));
+        encryptBtn.setForeground(Color.WHITE);
+        btnPanel.add(encryptBtn);
+        btnPanel.add(decryptBtn);
 
-		frame.add(centerPanel, BorderLayout.CENTER);
+        leftPanel.add(cardPanel);
+        leftPanel.add(Box.createVerticalStrut(10));
+        leftPanel.add(btnPanel);
 
-		setupMenuBar();
+        frame.add(leftPanel, BorderLayout.WEST);
+    }
 
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
-	}
+    private void buildCenterPanel() {
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 0, 10));
+        centerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-	private void initCardPanels() {
-		caesarPanel = new CaesarConfigPanel();
-		substitutionPanel = new SubstitutionConfigPanel();
-		affinePanel = new AffineConfigPanel();
-		vigenerePanel = new VigenereConfigPanel();
-		hillPanel = new HillConfigPanel();
-		permutationPanel = new PermutationConfigPanel();
+        // Input
+        inputArea = new JTextArea();
+        inputArea.setLineWrap(true);
+        inputArea.setWrapStyleWord(true);
+        JScrollPane scrollIn = new JScrollPane(inputArea);
 
-		cardPanel.add(caesarPanel, "Caesar");
-		cardPanel.add(substitutionPanel, "Substitution");
-		cardPanel.add(affinePanel, "Affine");
-		cardPanel.add(vigenerePanel, "Vigenere");
-		cardPanel.add(hillPanel, "Hill");
-		cardPanel.add(permutationPanel, "Permutation");
-	}
+        // Bọc trong panel để thêm toolbar nút Import
+        JPanel inputWrapper = buildTextPanelWithToolbar(
+                scrollIn, "Dữ liệu gốc (Input)",
+                itemImportInput, null
+        );
 
-	private void setupMenuBar() {
-		JMenuBar menuBar = new JMenuBar();
-		JMenu menu = new JMenu("Thuật toán");
-		menu.add(itemCaesar);
-		menu.add(itemSubstitution);
-		menu.add(itemAffine);
-		menu.add(itemVigenere);
-		menu.add(itemHill);
-		menu.add(itemPermutation);
+        // Output
+        outputArea = new JTextArea();
+        outputArea.setLineWrap(true);
+        outputArea.setWrapStyleWord(true);
+        outputArea.setEditable(false);
+        outputArea.setBackground(new Color(245, 245, 245));
+        JScrollPane scrollOut = new JScrollPane(outputArea);
 
-		JMenu languageMenu = new JMenu("Ngôn ngữ");
-		languageMenu.add(itemVN);
-		languageMenu.add(itemEN);
+        JPanel outputWrapper = buildTextPanelWithToolbar(
+                scrollOut, "Kết quả (Output)",
+                null, itemSaveOutput
+        );
 
-		menuBar.add(menu);
-		menuBar.add(languageMenu);
-		frame.setJMenuBar(menuBar);
-	}
+        centerPanel.add(inputWrapper);
+        centerPanel.add(outputWrapper);
+        frame.add(centerPanel, BorderLayout.CENTER);
+    }
 
-	public void showLayout(String methodName) {
-		cardLayout.show(cardPanel, methodName);
+    /**
+     * Bao bọc một JScrollPane trong panel có TitledBorder và toolbar nhỏ
+     * chứa nút Import (trái) hoặc Save (phải).
+     */
+    private JPanel buildTextPanelWithToolbar(JScrollPane scroll,
+                                              String title,
+                                              JMenuItem importItem,
+                                              JMenuItem saveItem) {
+        JPanel wrapper = new JPanel(new BorderLayout(0, 2));
+        wrapper.setBorder(BorderFactory.createTitledBorder(title));
 
-		Border border = cardPanel.getBorder();
-		TitledBorder titled = (TitledBorder) border;
-		titled.setTitle("Thuật toán: " + methodName);
-		cardPanel.repaint();
-	}
+        // Toolbar nằm trên
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 1));
+        toolbar.setOpaque(false);
 
-	public JTextArea getInputArea() {
-		return inputArea;
-	}
+        if (importItem != null) {
+            JButton btn = makeToolbarButton("📂 Import", importItem);
+            toolbar.add(btn);
+        }
+        if (saveItem != null) {
+            JButton btn = makeToolbarButton("💾 Save", saveItem);
+            toolbar.add(btn);
+        }
 
-	public JTextArea getOutputArea() {
-		return outputArea;
-	}
+        wrapper.add(toolbar, BorderLayout.NORTH);
+        wrapper.add(scroll, BorderLayout.CENTER);
+        return wrapper;
+    }
 
-	public JButton getEncryptBtn() {
-		return encryptBtn;
-	}
+    /** Tạo nút nhỏ liên kết với JMenuItem (cùng ActionListener). */
+    private JButton makeToolbarButton(String label, JMenuItem linkedItem) {
+        JButton btn = new JButton(label);
+        btn.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        btn.setMargin(new Insets(1, 6, 1, 6));
+        btn.addActionListener(e -> linkedItem.doClick());
+        return btn;
+    }
 
-	public JButton getDecryptBtn() {
-		return decryptBtn;
-	}
+    private void initCardPanels() {
+        caesarPanel       = new CaesarConfigPanel();
+        substitutionPanel = new SubstitutionConfigPanel();
+        affinePanel       = new AffineConfigPanel();
+        vigenerePanel     = new VigenereConfigPanel();
+        hillPanel         = new HillConfigPanel();
+        permutationPanel  = new PermutationConfigPanel();
 
-	public JMenuItem getItemCaesar() {
-		return itemCaesar;
-	}
+        cardPanel.add(caesarPanel,       "Caesar");
+        cardPanel.add(substitutionPanel, "Substitution");
+        cardPanel.add(affinePanel,       "Affine");
+        cardPanel.add(vigenerePanel,     "Vigenere");
+        cardPanel.add(hillPanel,         "Hill");
+        cardPanel.add(permutationPanel,  "Permutation");
+    }
 
-	public JMenuItem getItemSubstitution() {
-		return itemSubstitution;
-	}
+    private void setupMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
 
-	public JMenuItem getItemVigenere() {
-		return itemVigenere;
-	}
+        // ── File menu ────────────────────────────────────────────
+        JMenu fileMenu = new JMenu("File");
+        fileMenu.add(itemImportInput);
+        fileMenu.add(itemSaveOutput);
+        fileMenu.addSeparator();
+        fileMenu.add(itemImportKey);
+        fileMenu.add(itemSaveKey);
+        fileMenu.addSeparator();
+        fileMenu.add(itemClearAll);
 
-	public JMenuItem getItemAffine() {
-		return itemAffine;
-	}
+        // ── Thuật toán menu ──────────────────────────────────────
+        JMenu algoMenu = new JMenu("Thuật toán");
+        algoMenu.add(itemCaesar);
+        algoMenu.add(itemSubstitution);
+        algoMenu.add(itemAffine);
+        algoMenu.add(itemVigenere);
+        algoMenu.add(itemHill);
+        algoMenu.add(itemPermutation);
 
-	public JMenuItem getItemHill() {
-		return itemHill;
-	}
+        // ── Ngôn ngữ menu ────────────────────────────────────────
+        JMenu langMenu = new JMenu("Ngôn ngữ");
+        langMenu.add(itemVN);
+        langMenu.add(itemEN);
 
-	public JMenuItem getItemPermutation() {
-		return itemPermutation;
-	}
+        menuBar.add(fileMenu);
+        menuBar.add(algoMenu);
+        menuBar.add(langMenu);
+        frame.setJMenuBar(menuBar);
+    }
 
-	public JMenuItem getItemVN() {
-		return itemVN;
-	}
+    // ── Public API ───────────────────────────────────────────────
 
-	public JMenuItem getItemEN() {
-		return itemEN;
-	}
+    public void showLayout(String methodName) {
+        cardLayout.show(cardPanel, methodName);
+        Border border = cardPanel.getBorder();
+        if (border instanceof TitledBorder tb) {
+            tb.setTitle("Thuật toán: " + methodName);
+            cardPanel.repaint();
+        }
+    }
 
-	/// --- Get Panel Sub ---
-	public CaesarConfigPanel getCaesarPanel() {
-		return caesarPanel;
-	}
+    public void setLanguageStatus(String lang) {
+        statusLabel.setText("Ngôn ngữ: " +
+                (lang.equals("VN") ? "Tiếng Việt (VN) " : "English (EN) "));
+    }
 
-	public SubstitutionConfigPanel getSubstitutionPanel() {
-		return substitutionPanel;
-	}
+    // ── Getters: areas & buttons ─────────────────────────────────
+    public JTextArea getInputArea()   { return inputArea; }
+    public JTextArea getOutputArea()  { return outputArea; }
+    public JButton   getEncryptBtn()  { return encryptBtn; }
+    public JButton   getDecryptBtn()  { return decryptBtn; }
 
-	public AffineConfigPanel getAffinePanel() {
-		return affinePanel;
-	}
+    // ── Getters: algo menu items ─────────────────────────────────
+    public JMenuItem getItemCaesar()       { return itemCaesar; }
+    public JMenuItem getItemSubstitution() { return itemSubstitution; }
+    public JMenuItem getItemAffine()       { return itemAffine; }
+    public JMenuItem getItemVigenere()     { return itemVigenere; }
+    public JMenuItem getItemHill()         { return itemHill; }
+    public JMenuItem getItemPermutation()  { return itemPermutation; }
 
-	public VigenereConfigPanel getVigenerePanel() {
-		return vigenerePanel;
-	}
+    // ── Getters: lang menu items ─────────────────────────────────
+    public JMenuItem getItemVN() { return itemVN; }
+    public JMenuItem getItemEN() { return itemEN; }
 
-	public HillConfigPanel getHillPanel() {
-		return hillPanel;
-	}
+    // ── Getters: file menu items ─────────────────────────────────
+    public JMenuItem getItemImportInput() { return itemImportInput; }
+    public JMenuItem getItemSaveOutput()  { return itemSaveOutput; }
+    public JMenuItem getItemImportKey()   { return itemImportKey; }
+    public JMenuItem getItemSaveKey()     { return itemSaveKey; }
+    public JMenuItem getItemClearAll()    { return itemClearAll; }
 
-	public PermutationConfigPanel getPermutationPanel() {
-		return permutationPanel;
-	}
+    // ── Getters: cipher panels ───────────────────────────────────
+    public CaesarConfigPanel       getCaesarPanel()       { return caesarPanel; }
+    public SubstitutionConfigPanel  getSubstitutionPanel() { return substitutionPanel; }
+    public AffineConfigPanel        getAffinePanel()       { return affinePanel; }
+    public VigenereConfigPanel      getVigenerePanel()     { return vigenerePanel; }
+    public HillConfigPanel          getHillPanel()         { return hillPanel; }
+    public PermutationConfigPanel   getPermutationPanel()  { return permutationPanel; }
 
-	public void setLanguageStatus(String lang) {
-		statusLabel.setText("Ngôn ngữ: " + (lang.equals("VN") ? "Tiếng Việt (VN) " : "English (EN) "));
-	}
+    /**
+     * Trả về panel hiện tại dưới dạng KeyPanel (interface chung).
+     * Dùng để controller có thể gọi getKeyText()/setKeyText() mà không cần switch.
+     */
+    public KeyPanel getCurrentKeyPanel(String currentMethod) {
+        return switch (currentMethod) {
+            case "Caesar"       -> caesarPanel;
+            case "Substitution" -> substitutionPanel;
+            case "Affine"       -> affinePanel;
+            case "Vigenere"     -> vigenerePanel;
+            case "Hill"         -> hillPanel;
+            case "Permutation"  -> permutationPanel;
+            default             -> null;
+        };
+    }
 
-	public static void main(String[] args) {
-		MainFrame frame = new MainFrame();
-		new CryptoController(frame);
-	}
+    // ── Entry point ──────────────────────────────────────────────
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MainFrame frame = new MainFrame();
+            new CryptoController(frame);
+        });
+    }
 }
