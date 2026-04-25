@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.*;
 
-public class PermutationCipher {
-	private static final char PADDING_CHAR = 'X';
+/**
+ * Permutation (Transposition) Cipher – sắp xếp lại vị trí ký tự theo key.
+ */
+public class PermutationCipher implements ClassicCipher{
+	private static final char PADDING = 'X';
 
+	/// --- GEN KEY ---
 	public String genKey(int length) {
 		if (length <= 0)
 			return "";
@@ -14,89 +18,88 @@ public class PermutationCipher {
 		for (int i = 0; i < length; i++) {
 			numbers.add(i);
 		}
-		Collections.shuffle(numbers); 
+		Collections.shuffle(numbers);
 
 		StringBuilder sb = new StringBuilder();
 		for (int num : numbers) {
-			sb.append(num).append(" "); 
+			sb.append(num).append(" ");
 		}
 		return sb.toString().trim();
 	}
 
-	public String encrypt(String input, String key) {
-	    if (key == null || key.isEmpty()) return input;
-
-	    String cleanKey = key.replace(" ", "");
-	    int columns = cleanKey.length(); 
-	    int rows = (int) Math.ceil((double) input.length() / columns);
-	    
-	    char[][] grid = new char[rows][columns];
-	    int charIdx = 0;
-
-	    for (int i = 0; i < rows; i++) {
-	        for (int j = 0; j < columns; j++) {
-	            if (charIdx < input.length()) {
-	                grid[i][j] = input.charAt(charIdx++);
-	            } else {
-	                grid[i][j] = PADDING_CHAR;
-	            }
-	        }
-	    }
-
-	    Integer[] keyOrder = getKeyOrder(cleanKey); 
-
-	    StringBuilder output = new StringBuilder();
-	    for (int colIndex : keyOrder) {
-	        for (int row = 0; row < rows; row++) {
-	            output.append(grid[row][colIndex]);
-	        }
-	    }
-	    return output.toString();
+	/// --- Implement ---
+	@Override
+	public String encryptEN(String plainText, String key) {
+		return encrypt(plainText, key);
 	}
 
-	public String decrypt(String input, String key) {
-	    if (key == null || key.isEmpty()) return input;
-
-	    String cleanKey = key.replace(" ", "");
-	    int columns = cleanKey.length();
-	    int rows = input.length() / columns;
-	    char[][] grid = new char[rows][columns];
-
-	    Integer[] keyOrder = getKeyOrder(cleanKey);
-	    int charIdx = 0;
-
-	    for (int colIndex : keyOrder) {
-	        for (int row = 0; row < rows; row++) {
-	            grid[row][colIndex] = input.charAt(charIdx++);
-	        }
-	    }
-
-	    StringBuilder output = new StringBuilder();
-	    for (int i = 0; i < rows; i++) {
-	        for (int j = 0; j < columns; j++) {
-	            output.append(grid[i][j]);
-	        }
-	    }
-
-	    String result = output.toString();
-	    while (result.endsWith(String.valueOf(PADDING_CHAR))) {
-	        result = result.substring(0, result.length() - 1);
-	    }
-	    return result;
+	@Override
+	public String decryptEN(String cipherText, String key) {
+		return decrypt(cipherText, key);
 	}
 
-	private Integer[] getKeyOrder(String cleanKey) {
-	    int n = cleanKey.length();
-	    Integer[] indices = new Integer[n];
-	    for (int i = 0; i < n; i++) indices[i] = i;
-
-	    Arrays.sort(indices, (a, b) -> {
-	        int charComp = Character.compare(cleanKey.charAt(a), cleanKey.charAt(b));
-	        if (charComp != 0) return charComp;
-	        return Integer.compare(a, b);
-	    });
-	    return indices;
+	@Override
+	public String encryptVN(String plainText, String key) {
+		return encrypt(plainText, key);
 	}
 
+	@Override
+	public String decryptVN(String cipherText, String key) {
+		return decrypt(cipherText, key);
+	}
+
+	/// --- Handle ---
+	private String encrypt(String input, String key) {
+		if (key == null || key.isEmpty())
+			return input;
+		Integer[] order = parseKey(key);
+		int cols = order.length;
+		int rows = (int) Math.ceil((double) input.length() / cols);
+
+		char[][] grid = new char[rows][cols];
+		int idx = 0;
+		for (int r = 0; r < rows; r++)
+			for (int c = 0; c < cols; c++)
+				grid[r][c] = idx < input.length() ? input.charAt(idx++) : PADDING;
+
+		StringBuilder sb = new StringBuilder(input.length());
+		for (int col : order)
+			for (int r = 0; r < rows; r++)
+				sb.append(grid[r][col]);
+		return sb.toString();
+	}
+
+	private String decrypt(String input, String key) {
+		if (key == null || key.isEmpty())
+			return input;
+		Integer[] order = parseKey(key);
+		int cols = order.length;
+		int rows = input.length() / cols;
+
+		char[][] grid = new char[rows][cols];
+		int idx = 0;
+		for (int col : order)
+			for (int r = 0; r < rows; r++)
+				grid[r][col] = input.charAt(idx++);
+
+		StringBuilder sb = new StringBuilder(rows * cols);
+		for (int r = 0; r < rows; r++)
+			for (int c = 0; c < cols; c++)
+				sb.append(grid[r][c]);
+
+		String result = sb.toString();
+		int end = result.length();
+		while (end > 0 && result.charAt(end - 1) == PADDING)
+			end--;
+		return result.substring(0, end);
+	}
+
+	private Integer[] parseKey(String key) {
+		String[] parts = key.trim().split("\\s+");
+		Integer[] order = new Integer[parts.length];
+		for (int i = 0; i < parts.length; i++)
+			order[i] = Integer.parseInt(parts[i]);
+		return order;
+	}
 
 }

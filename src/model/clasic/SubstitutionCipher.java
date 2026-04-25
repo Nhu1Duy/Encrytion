@@ -5,76 +5,65 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class SubstitutionCipher {
+/**
+ * Substitution Cipher – mỗi ký tự trong alphabet được ánh xạ sang ký tự khác theo key
+ * Key là một hoán vị của alphabet, key.length() == EN_ALPHABET_FUL.length()
+ */
+public class SubstitutionCipher implements ClassicCipher{
 
-	public static String genKeySubstitutionCipher(String alphabet) {
-		char[] arrayVNAnpabet = alphabet.toCharArray();
-		List<Character> letters = new ArrayList<Character>();
-		for (char c : arrayVNAnpabet) {
-			letters.add(c);
-		}
-		Collections.shuffle(letters);
-		StringBuilder output = new StringBuilder();
-		for (char c : letters) {
-			output.append(c);
-		}
-		return output.toString();
-	}
-
-	public String encryptEN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		String alphabet = Alphabet.EN_ALPHABET_FUL;
-		for (char c : input.toCharArray()) {
-			int index = alphabet.indexOf(c);
-			if (index != -1) {
-				output.append(key.charAt(index));
-			} else {
-				output.append(c);
-			}
-		}
-		return output.toString();
-	}
-
-	public String decryptEN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		String alphabet = Alphabet.EN_ALPHABET_FUL;
-		for (char c : input.toCharArray()) {
-			int index = key.indexOf(c);
-			if (index != -1) {
-				output.append(alphabet.charAt(index));
-			} else {
-				output.append(c);
-			}
-		}
-		return output.toString();
-	}
-
-	public String encryptVN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		String alphabet = Alphabet.VN_ALPHABET_FUL;
-		for (char c : input.toCharArray()) {
-			int index = alphabet.indexOf(c);
-			if (index != -1) {
-				output.append(key.charAt(index));
-			} else {
-				output.append(c);
-			}
-		}
-		return output.toString();
-	}
-
-	public String decryptVN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		String alphabet = Alphabet.VN_ALPHABET_FUL;
-		for (char c : input.toCharArray()) {
-			int index = key.indexOf(c);
-			if (index != -1) {
-				output.append(alphabet.charAt(index));
-			} else {
-				output.append(c);
-			}
-		}
-		return output.toString();
-	}
+	/// --- GEN KEY ---
+    public String genKey(String alphabet) {
+        List<Character> chars = new ArrayList<>(alphabet.length());
+        for (char c : alphabet.toCharArray()) chars.add(c);
+        Collections.shuffle(chars);
+        StringBuilder sb = new StringBuilder(chars.size());
+        for (char c : chars) sb.append(c);
+        return sb.toString();
+    }
+    
+	/// --- Implement ---
+    @Override
+    public String encryptEN(String plainText, String key) {
+        return substitute(plainText, key, Alphabet.EN_ALPHABET_FUL, true);
+    }
+ 
+    @Override
+    public String decryptEN(String cipherText, String key) {
+        return substitute(cipherText, key, Alphabet.EN_ALPHABET_FUL, false);
+    }
+ 
+    @Override
+    public String encryptVN(String plainText, String key) {
+        return substitute(plainText, key, Alphabet.VN_ALPHABET_FUL, true);
+    }
+ 
+    @Override
+    public String decryptVN(String cipherText, String key) {
+        return substitute(cipherText, key, Alphabet.VN_ALPHABET_FUL, false);
+    }
+    
+    /// --- Handle ---
+    private String substitute(String text, String key, String alphabet, boolean encrypt) {
+        String from;
+        String to;
+        if (encrypt) {
+            from = alphabet;
+            to = key;
+        } else {
+            from = key;
+            to = alphabet;
+        }
+ 
+        StringBuilder sb = new StringBuilder(text.length());
+        for (char c : text.toCharArray()) {
+            int idx = from.indexOf(c);
+            if (idx >= 0) {
+                sb.append(to.charAt(idx));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
 
 }

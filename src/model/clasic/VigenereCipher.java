@@ -1,107 +1,83 @@
 package model.clasic;
 
 import Tool.Alphabet;
-import  java.util.Random;
+import java.util.Random;
 
-public class VigenereCipher {
+/**
+ * Vigenere Cipher – mỗi ký tự được dịch vòng theo ký tự tương ứng trong key
+ */
+public class VigenereCipher implements ClassicCipher {
+	/// --- GEN KEY ---
 	public String genKey(String alphabet, int length) {
-		if (length <= 0) return "";
+		if (length <= 0)
+			return "";
 		Random rand = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            int index = rand.nextInt(alphabet.length());
-            sb.append(alphabet.charAt(index));
-        }
-        return sb.toString();
-    }
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < length; i++) {
+			int index = rand.nextInt(alphabet.length());
+			sb.append(alphabet.charAt(index));
+		}
+		return sb.toString();
+	}
 
-	public String encryptEN(String input, String key) {
-		
-		StringBuilder output = new StringBuilder();
-		int m = Alphabet.EN_ALPHABET_FUL.length();
-		int j = 0;
+	/// --- Implement ---
+	@Override
+	public String encryptEN(String plainText, String key) {
+		return process(plainText, key, true, Alphabet.EN_ALPHABET_FUL);
+	}
 
-		for (int i = 0; i < input.length(); i++) {
-			char iInput = input.charAt(i);
-			char jInput = key.charAt(j);
-			int p = Alphabet.EN_ALPHABET_FUL.indexOf(iInput);
-			int k = Alphabet.EN_ALPHABET_FUL.indexOf(jInput);
-			if (p != -1) {
-				if (k == -1) k = 0;
-				int cy = (p + k) % m;
-				output.append(Alphabet.EN_ALPHABET_FUL.charAt(cy));
-				j = (j + 1) % key.length();
+	@Override
+	public String decryptEN(String cipherText, String key) {
+		return process(cipherText, key, false, Alphabet.EN_ALPHABET_FUL);
+	}
+
+	@Override
+	public String encryptVN(String plainText, String key) {
+		return process(plainText, key, true, Alphabet.VN_ALPHABET_FUL);
+	}
+
+	@Override
+	public String decryptVN(String cipherText, String key) {
+		return process(cipherText, key, false, Alphabet.VN_ALPHABET_FUL);
+	}
+
+	/// --- Handle ---
+	private String process(String text, String key, boolean encrypt, String alphabet) {
+		int m = alphabet.length();
+		int kj = 0; 
+		StringBuilder sb = new StringBuilder(text.length());
+
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			int p = alphabet.indexOf(c);
+			if (p >= 0) {
+				char keyChar = key.charAt(kj);
+				int k = alphabet.indexOf(keyChar);
+
+				if (k < 0) {
+					k = 0; 
+				}
+				int cy;
+				if (encrypt) {
+					cy = (p + k) % m;
+				} else {
+					cy = (p - k) % m;
+					if (cy < 0) {
+						cy = cy + m;
+					}
+				}
+				sb.append(alphabet.charAt(cy));
+				kj = kj + 1;
+				if (kj == key.length()) {
+					kj = 0;
+				}
+
 			} else {
-				output.append(iInput);
+				sb.append(c);
 			}
 		}
 
-		return output.toString();
+		return sb.toString();
 	}
-	public String decryptEN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		int m = Alphabet.EN_ALPHABET_FUL.length();
-		int j = 0;
 
-		for (int i = 0; i < input.length(); i++) {
-			char iInput = input.charAt(i);
-			char jInput = key.charAt(j);
-			int p = Alphabet.EN_ALPHABET_FUL.indexOf(iInput);
-			int k = Alphabet.EN_ALPHABET_FUL.indexOf(jInput);
-			if (p != -1) {
-				if (k == -1) k = 0;
-				int cy = (p - k + m) % m;
-				output.append(Alphabet.EN_ALPHABET_FUL.charAt(cy));
-				j = (j + 1) % key.length();
-			} else {
-				output.append(iInput);
-			}
-		}
-
-		return output.toString();
-	}
-	public String encryptVN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		int m = Alphabet.VN_ALPHABET_FUL.length();
-		int j = 0;
-
-		for (int i = 0; i < input.length(); i++) {
-			char iInput = input.charAt(i);
-			char jInput = key.charAt(j);
-			int p = Alphabet.VN_ALPHABET_FUL.indexOf(iInput);
-			int k = Alphabet.VN_ALPHABET_FUL.indexOf(jInput);
-			if (p != -1) {
-				if (k == -1) k = 0;
-				int cy = (p + k) % m;
-				output.append(Alphabet.VN_ALPHABET_FUL.charAt(cy));
-				j = (j + 1) % key.length();
-			} else {
-				output.append(iInput);
-			}
-		}
-
-		return output.toString();
-	}
-	public String decryptVN(String input, String key) {
-		StringBuilder output = new StringBuilder();
-		int m = Alphabet.VN_ALPHABET_FUL.length();
-		int j = 0;
-
-		for (int i = 0; i < input.length(); i++) {
-			char iInput = input.charAt(i);
-			char jInput = key.charAt(j);
-			int p = Alphabet.VN_ALPHABET_FUL.indexOf(iInput);
-			int k = Alphabet.VN_ALPHABET_FUL.indexOf(jInput);
-			if (p != -1 ) {
-				if (k == -1) k = 0;
-				int cy = (p - k + m) % m;
-				output.append(Alphabet.VN_ALPHABET_FUL.charAt(cy));
-				j = (j + 1) % key.length();
-			} else {
-				output.append(iInput);
-			}
-		}
-
-		return output.toString();
-	}
 }
