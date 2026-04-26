@@ -17,6 +17,7 @@ public class ControllerContext {
     public static final String METHOD_VIGENERE      = "Vigenere";
     public static final String METHOD_HILL          = "Hill";
     public static final String METHOD_PERMUTATION   = "Permutation";
+    public static final String METHOD_SYMMETRIC = "Symmetric";
 
     public static final String LANG_VN = "VN";
     public static final String LANG_EN = "EN";

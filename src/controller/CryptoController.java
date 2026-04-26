@@ -19,13 +19,26 @@ import view.MainFrame;
  */
 public class CryptoController {
 
+	private final ControllerContext  ctx;
+    private final KeyValidator       validator;
+    private final HillKeyParser      hillKeyParser;
+ 
+    // [THÊM FIELD]
+    private SymmetricController symmetricController;
+ 
     public CryptoController(MainFrame view) {
-        ControllerContext ctx           = new ControllerContext(view);
-        KeyValidator      validator     = new KeyValidator(ctx);
-        HillKeyParser     hillKeyParser = new HillKeyParser(ctx);
-
-        new MenuController(ctx).bind();
+        ctx           = new ControllerContext(view);
+        validator     = new KeyValidator(ctx);
+        hillKeyParser = new HillKeyParser(ctx);
+    }
+    public void bind() {
+        // Các controller hiện có (KHÔNG thay đổi):
         new ActionController(ctx, validator).bind();
         new FileController(ctx, hillKeyParser).bind();
+        new MenuController(ctx).bind();
+ 
+        // [THÊM] Controller mới cho Symmetric:
+        symmetricController = new SymmetricController(ctx);
+        symmetricController.bind();
     }
 }

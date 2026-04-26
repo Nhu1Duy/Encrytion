@@ -23,6 +23,8 @@ public class MenuController {
         ctx.view.getItemVigenere()    .addActionListener(e -> switchMethod(ControllerContext.METHOD_VIGENERE));
         ctx.view.getItemHill()        .addActionListener(e -> switchMethod(ControllerContext.METHOD_HILL));
         ctx.view.getItemPermutation() .addActionListener(e -> switchMethod(ControllerContext.METHOD_PERMUTATION));
+        ctx.view.getItemSymmetric()   .addActionListener(e ->
+        switchMethod(ControllerContext.METHOD_SYMMETRIC));
     }
 
     private void bindLanguageMenu() {

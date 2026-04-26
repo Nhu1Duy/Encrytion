@@ -17,6 +17,7 @@ public class MainFrame {
     private VigenereConfigPanel      vigenerePanel;
     private HillConfigPanel          hillPanel;
     private PermutationConfigPanel   permutationPanel;
+    private SymmetricPanel symmetricPanel;
 
     private JTextArea    inputArea, outputArea;
     private JButton      encryptBtn, decryptBtn;
@@ -31,6 +32,7 @@ public class MainFrame {
     private JMenuItem itemVigenere     = new JMenuItem("Vigenere");
     private JMenuItem itemHill         = new JMenuItem("Hill (Ma trận)");
     private JMenuItem itemPermutation  = new JMenuItem("Hoán Vị (Permutation)");
+    private JMenuItem itemSymmetric;  
 
     // ── Ngôn ngữ menu ────────────────────────────────────────────
     private JMenuItem itemVN = new JMenuItem("Tiếng Việt");
@@ -191,13 +193,15 @@ public class MainFrame {
         vigenerePanel     = new VigenereConfigPanel();
         hillPanel         = new HillConfigPanel();
         permutationPanel  = new PermutationConfigPanel();
-
+        symmetricPanel = new SymmetricPanel();
+        
         cardPanel.add(caesarPanel,       "Caesar");
         cardPanel.add(substitutionPanel, "Substitution");
         cardPanel.add(affinePanel,       "Affine");
         cardPanel.add(vigenerePanel,     "Vigenere");
         cardPanel.add(hillPanel,         "Hill");
         cardPanel.add(permutationPanel,  "Permutation");
+        cardPanel.add(symmetricPanel, "Symmetric");
     }
 
     private void setupMenuBar() {
@@ -262,6 +266,9 @@ public class MainFrame {
     public JMenuItem getItemVigenere()     { return itemVigenere; }
     public JMenuItem getItemHill()         { return itemHill; }
     public JMenuItem getItemPermutation()  { return itemPermutation; }
+    public JMenuItem getItemSymmetric() {
+        return itemSymmetric;
+    }
 
     // ── Getters: lang menu items ─────────────────────────────────
     public JMenuItem getItemVN() { return itemVN; }
@@ -281,7 +288,12 @@ public class MainFrame {
     public VigenereConfigPanel      getVigenerePanel()     { return vigenerePanel; }
     public HillConfigPanel          getHillPanel()         { return hillPanel; }
     public PermutationConfigPanel   getPermutationPanel()  { return permutationPanel; }
-
+    public SymmetricPanel getSymmetricPanel() {
+        return symmetricPanel;
+    }
+    public JLabel getStatusLabel() {
+        return statusLabel;
+    }
     /**
      * Trả về panel hiện tại dưới dạng KeyPanel (interface chung).
      * Dùng để controller có thể gọi getKeyText()/setKeyText() mà không cần switch.
