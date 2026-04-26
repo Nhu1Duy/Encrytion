@@ -43,7 +43,6 @@ public class AffineCipher implements ClassicCipher {
 	}
 
 	/// --- Handle ---
-
     private String process(String text, int[] ab, boolean encrypt, String alphabet) {
         int m   = alphabet.length();
         int a   = ab[0], b = ab[1];

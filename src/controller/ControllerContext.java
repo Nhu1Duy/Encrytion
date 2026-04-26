@@ -4,13 +4,8 @@ import Tool.Alphabet;
 import model.clasic.*;
 import view.MainFrame;
 
-/**
- * ControllerContext – lưu trạng thái dùng chung giữa các sub-controller.
- * Đóng vai trò "túi dữ liệu" (shared state) trong kiến trúc phân tách.
- */
 public class ControllerContext {
 
-    // ── Constants ────────────────────────────────────────────────
     public static final String METHOD_CAESAR       = "Caesar";
     public static final String METHOD_SUBSTITUTION = "Substitution";
     public static final String METHOD_AFFINE        = "Affine";
@@ -22,10 +17,8 @@ public class ControllerContext {
     public static final String LANG_VN = "VN";
     public static final String LANG_EN = "EN";
 
-    // ── View ─────────────────────────────────────────────────────
     public final MainFrame view;
 
-    // ── Model instances ──────────────────────────────────────────
     public final CaesarCipher      caesarCipher      = new CaesarCipher();
     public final SubstitutionCipher substitutionCipher = new SubstitutionCipher();
     public final VigenereCipher     vigenereCipher    = new VigenereCipher();
@@ -33,7 +26,6 @@ public class ControllerContext {
     public final HillCipher         hillCipher        = new HillCipher();
     public final PermutationCipher  permutationCipher = new PermutationCipher();
 
-    // ── Mutable state ────────────────────────────────────────────
     public String  currentMethod   = METHOD_CAESAR;
     public String  currentLanguage = LANG_VN;
     public int[][] hillKeyMatrix   = null;
@@ -43,7 +35,6 @@ public class ControllerContext {
         this.view = view;
     }
 
-    // ── Helpers ──────────────────────────────────────────────────
     public boolean isVN()            { return LANG_VN.equals(currentLanguage); }
     public String  currentAlphabet() { return isVN() ? Alphabet.VN_ALPHABET_FUL : Alphabet.EN_ALPHABET_FUL; }
     public int     alphabetSize()    { return (int) currentAlphabet().codePoints().count(); }

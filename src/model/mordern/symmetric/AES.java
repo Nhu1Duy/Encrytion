@@ -8,21 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * AES – Advanced Encryption Standard, CBC mode với IV ngẫu nhiên.
- *
- * Hỗ trợ key size: 128, 192, 256 bit.
- * IV (16 bytes) được prepend vào ciphertext khi encrypt và tách ra khi decrypt.
- */
 public class AES implements SymmetricCipher {
 
     private static final String ALGORITHM      = "AES";
     private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
-    private static final int    IV_SIZE        = 16; // AES block size = 128 bit
+    private static final int    IV_SIZE        = 16; 
 
     private SecretKey key;
 
-    // ── SymmetricCipher ───────────────────────────────────────────
 
     @Override
     public void genKey(int keySize) throws Exception {
@@ -52,7 +45,6 @@ public class AES implements SymmetricCipher {
         return new int[]{128, 192, 256};
     }
 
-    // ── Text ─────────────────────────────────────────────────────
 
     @Override
     public String encryptText(String plaintext) throws Exception {
@@ -73,11 +65,6 @@ public class AES implements SymmetricCipher {
         return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
     }
 
-    // ── File ─────────────────────────────────────────────────────
-
-    /**
-     * Mã hóa file src → des. 16 bytes đầu output là IV.
-     */
     public boolean encryptFile(String src, String des) throws Exception {
         ensureKey();
         byte[] iv     = generateIV();
@@ -95,9 +82,6 @@ public class AES implements SymmetricCipher {
         return true;
     }
 
-    /**
-     * Giải mã file src → des. Đọc IV từ 16 bytes đầu.
-     */
     public boolean decryptFile(String src, String des) throws Exception {
         ensureKey();
 
@@ -113,8 +97,6 @@ public class AES implements SymmetricCipher {
         }
         return true;
     }
-
-    // ── Internal helpers ─────────────────────────────────────────
 
     private Cipher buildCipher(int mode, byte[] iv) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);

@@ -9,12 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * DES – Data Encryption Standard (56-bit key, CBC mode với IV ngẫu nhiên).
- *
- * Lưu ý: DES đã lỗi thời về bảo mật, chỉ dùng cho mục đích học tập.
- * IV (8 bytes) được prepend vào ciphertext khi encrypt và tách ra khi decrypt.
- */
+
 public class DES implements SymmetricCipher {
 
     private static final String ALGORITHM    = "DES";
@@ -23,11 +18,8 @@ public class DES implements SymmetricCipher {
 
     private SecretKey key;
 
-    // ── SymmetricCipher ───────────────────────────────────────────
-
     @Override
     public void genKey(int keySize) throws Exception {
-        // DES chỉ hỗ trợ 56-bit; tham số keySize giữ để nhất quán interface
         KeyGenerator kg = KeyGenerator.getInstance(ALGORITHM);
         kg.init(56);
         key = kg.generateKey();
@@ -50,15 +42,12 @@ public class DES implements SymmetricCipher {
         return new int[]{56};
     }
 
-    // ── Text ─────────────────────────────────────────────────────
-
     @Override
     public String encryptText(String plaintext) throws Exception {
         ensureKey();
         byte[] iv = generateIV();
         Cipher cipher = buildCipher(Cipher.ENCRYPT_MODE, iv);
         byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-        // Kết hợp IV + ciphertext → Base64
         byte[] combined = concat(iv, encrypted);
         return Base64.getEncoder().encodeToString(combined);
     }
@@ -74,11 +63,7 @@ public class DES implements SymmetricCipher {
         return new String(decrypted, StandardCharsets.UTF_8);
     }
 
-    // ── File ─────────────────────────────────────────────────────
-
-    /**
-     * Mã hóa file src → des. IV ngẫu nhiên được ghi 8 bytes đầu file output.
-     */
+ 
     public boolean encryptFile(String src, String des) throws Exception {
         ensureKey();
         byte[] iv = generateIV();
@@ -87,7 +72,7 @@ public class DES implements SymmetricCipher {
         try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
              BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
 
-            out.write(iv); // prepend IV
+            out.write(iv); 
 
             try (CipherInputStream cis = new CipherInputStream(in, cipher)) {
                 byte[] buf = new byte[4096];
@@ -100,9 +85,6 @@ public class DES implements SymmetricCipher {
         return true;
     }
 
-    /**
-     * Giải mã file src → des. Đọc IV từ 8 bytes đầu file.
-     */
     public boolean decryptFile(String src, String des) throws Exception {
         ensureKey();
 
@@ -122,8 +104,6 @@ public class DES implements SymmetricCipher {
         }
         return true;
     }
-
-    // ── Internal helpers ─────────────────────────────────────────
 
     private Cipher buildCipher(int mode, byte[] iv) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);

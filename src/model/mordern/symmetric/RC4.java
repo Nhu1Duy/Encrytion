@@ -5,25 +5,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * RC4 – Rivest Cipher 4, stream cipher tự implement.
- *
- * Lưu ý: RC4 đã bị loại khỏi nhiều chuẩn bảo mật (TLS 1.3 không hỗ trợ).
- * Chỉ dùng cho mục đích học tập.
- *
- * Vì RC4 là stream cipher, không có IV. Để tránh tái sử dụng keystream
- * (key-reuse attack), mỗi lần encrypt sẽ sinh thêm 16-byte nonce ngẫu nhiên
- * và kết hợp nonce vào đầu key trước khi init KSA.
- *
- * Định dạng output: [16-byte nonce][ciphertext] → Base64.
- */
 public class RC4 implements SymmetricCipher {
 
     private static final int NONCE_SIZE = 16;
 
     private byte[] keyBytes;
 
-    // ── SymmetricCipher ───────────────────────────────────────────
 
     @Override
     public void genKey(int keySize) throws Exception {
@@ -46,11 +33,9 @@ public class RC4 implements SymmetricCipher {
 
     @Override
     public int[] getSupportedKeySizes() {
-        // Trả về các giá trị gợi ý; thực tế hỗ trợ 40–2048
         return new int[]{40, 128, 256};
     }
 
-    // ── Text ─────────────────────────────────────────────────────
 
     @Override
     public String encryptText(String plaintext) throws Exception {
@@ -71,12 +56,7 @@ public class RC4 implements SymmetricCipher {
         return new String(decrypted, StandardCharsets.UTF_8);
     }
 
-    // ── File ─────────────────────────────────────────────────────
-
-    /**
-     * Mã hóa file src → des.
-     * Định dạng: [16-byte nonce][RC4(plaintext)].
-     */
+   
     public boolean encryptFile(String src, String des) throws Exception {
         ensureKey();
         byte[] nonce        = generateNonce();
@@ -101,9 +81,6 @@ public class RC4 implements SymmetricCipher {
         return true;
     }
 
-    /**
-     * Giải mã file src → des (RC4 encrypt = decrypt).
-     */
     public boolean decryptFile(String src, String des) throws Exception {
         ensureKey();
 
@@ -127,11 +104,7 @@ public class RC4 implements SymmetricCipher {
         return true;
     }
 
-    // ── RC4 core ─────────────────────────────────────────────────
-
-    /**
-     * RC4 full: KSA + PRGA trên toàn bộ data.
-     */
+  
     private byte[] rc4(byte[] data, byte[] k) {
         int[] S = ksaInit(k);
         int[] ij = {0, 0};
@@ -140,9 +113,7 @@ public class RC4 implements SymmetricCipher {
         return out;
     }
 
-    /**
-     * KSA (Key Scheduling Algorithm) — khởi tạo S-box.
-     */
+
     private int[] ksaInit(byte[] k) {
         int[] S = new int[256];
         for (int i = 0; i < 256; i++) S[i] = i;
@@ -154,10 +125,7 @@ public class RC4 implements SymmetricCipher {
         return S;
     }
 
-    /**
-     * PRGA (Pseudo-Random Generation Algorithm) — XOR keystream vào data (in-place).
-     * ij[0] = i, ij[1] = j — giữ state qua nhiều lần gọi (dùng cho streaming file).
-     */
+
     private void xorWithKeystream(byte[] data, int[] S, int[] ij) {
         int i = ij[0], j = ij[1];
         for (int k = 0; k < data.length; k++) {
@@ -174,9 +142,7 @@ public class RC4 implements SymmetricCipher {
         int t = S[a]; S[a] = S[b]; S[b] = t;
     }
 
-    // ── Internal helpers ─────────────────────────────────────────
 
-    /** Kết hợp nonce + key để tạo effective key, tránh reuse keystream. */
     private byte[] buildEffectiveKey(byte[] nonce) {
         byte[] ek = new byte[nonce.length + keyBytes.length];
         System.arraycopy(nonce,    0, ek, 0,             nonce.length);

@@ -4,96 +4,89 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 
-/**
- * Panel cấu hình key cho một thuật toán symmetric cụ thể.
- * Hiển thị: chọn key size (bit), ô nhập key (Base64), nút Gen Key.
- * Kế thừa KeyPanel để tương thích với FileController (import/save key).
- */
 public class SymmetricConfigPanel extends JPanel implements KeyPanel {
 
-    private final String algoName;
-    private final int[]  keySizes;
+	private final String algoName;
+	private final int[] keySizes;
 
-    private JComboBox<String> keySizeCombo;
-    private JTextField        keyField;
-    private JButton           genBtn;
+	private JComboBox<String> keySizeCombo;
+	private JTextArea keyArea;
+	private JButton genBtn;
 
-    public SymmetricConfigPanel(String algoName, int[] keySizes) {
-        this.algoName = algoName;
-        this.keySizes = keySizes;
-        initUI();
-    }
+	public SymmetricConfigPanel(String algoName, int[] keySizes) {
+		this.algoName = algoName;
+		this.keySizes = keySizes;
+		initUI();
+	}
 
-    // ------------------------------------------------------------------ //
-    //  UI
-    // ------------------------------------------------------------------ //
+	private void initUI() {
+		setLayout(new BorderLayout());
+		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Cấu hình khóa – " + algoName,
+				TitledBorder.LEFT, TitledBorder.TOP));
 
-    private void initUI() {
-        setLayout(new GridBagLayout());
-        setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Cấu hình khóa – " + algoName,
-                TitledBorder.LEFT, TitledBorder.TOP));
+		JPanel main = new JPanel(new GridLayout(3, 1, 6, 6));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets  = new Insets(4, 6, 4, 6);
-        gbc.fill    = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 0;
+		/// --- KEY SIZE ---
+		JPanel row1 = new JPanel(new BorderLayout(6, 0));
+		row1.add(new JLabel("Key size (bit):"), BorderLayout.WEST);
 
-        // Row 0 – Key size label + combo
-        gbc.gridx = 0; gbc.gridy = 0;
-        add(new JLabel("Key size (bit):"), gbc);
+		keySizeCombo = new JComboBox<>(buildSizeOptions());
+		row1.add(keySizeCombo, BorderLayout.CENTER);
 
-        gbc.gridx = 1; gbc.weightx = 1;
-        keySizeCombo = new JComboBox<>(buildSizeOptions());
-        add(keySizeCombo, gbc);
+		/// --- KEY ---
+		JPanel row2 = new JPanel(new BorderLayout(6, 0));
+		row2.add(new JLabel("Key (Base64):"), BorderLayout.WEST);
 
-        // Row 1 – Key label + field + button
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
-        add(new JLabel("Key (Base64):"), gbc);
+		keyArea = new JTextArea();
+		keyArea.setLineWrap(true);
+		keyArea.setWrapStyleWord(true);
+		keyArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		JScrollPane scroll = new JScrollPane(keyArea);
+		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		row2.add(scroll, BorderLayout.CENTER);
 
-        gbc.gridx = 1; gbc.weightx = 1;
-        keyField = new JTextField();
-        keyField.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        keyField.setToolTipText("Nhập key dạng Base64 hoặc nhấn Gen Key");
-        add(keyField, gbc);
+		/// -- GENKEY BUTTON ---
+		JPanel row3 = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        gbc.gridx = 2; gbc.weightx = 0;
-        genBtn = new JButton("Gen Key");
-        add(genBtn, gbc);
-    }
+		genBtn = new JButton("⚡ Gen Key");
+		genBtn.setFocusPainted(false);
+		row3.add(genBtn);
 
-    private String[] buildSizeOptions() {
-        String[] opts = new String[keySizes.length];
-        for (int i = 0; i < keySizes.length; i++) {
-            opts[i] = keySizes[i] + " bit";
-        }
-        return opts;
-    }
+		main.add(row1);
+		main.add(row2);
+		main.add(row3);
 
-    // ------------------------------------------------------------------ //
-    //  Accessors used by SymmetricController
-    // ------------------------------------------------------------------ //
+		add(main, BorderLayout.CENTER);
+	}
 
-    public int getSelectedKeySize() {
-        int idx = keySizeCombo.getSelectedIndex();
-        return (idx >= 0) ? keySizes[idx] : keySizes[0];
-    }
+	private String[] buildSizeOptions() {
+		String[] opts = new String[keySizes.length];
+		for (int i = 0; i < keySizes.length; i++) {
+			opts[i] = keySizes[i] + " bit";
+		}
+		return opts;
+	}
 
-    public JTextField getKeyField()  { return keyField; }
-    public JButton    getGenBtn()    { return genBtn;   }
+	public int getSelectedKeySize() {
+		int idx = keySizeCombo.getSelectedIndex();
+		return (idx >= 0) ? keySizes[idx] : keySizes[0];
+	}
 
-    // ------------------------------------------------------------------ //
-    //  KeyPanel interface (tương thích FileController import/save key)
-    // ------------------------------------------------------------------ //
+	public JTextArea getKeyArea() {
+		return keyArea;
+	}
 
-    @Override
-    public String getKeyText() {
-        return keyField.getText().trim();
-    }
+	public JButton getGenBtn() {
+		return genBtn;
+	}
 
-    @Override
-    public void setKeyText(String key) {
-        keyField.setText(key == null ? "" : key.trim());
-    }
+	@Override
+	public String getKeyText() {
+		return keyArea.getText().trim();
+	}
+
+	@Override
+	public void setKeyText(String key) {
+		keyArea.setText(key == null ? "" : key.trim());
+	}
 }

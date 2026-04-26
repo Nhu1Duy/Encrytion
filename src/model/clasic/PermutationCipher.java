@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.*;
 
 /**
- * Permutation (Transposition) Cipher – sắp xếp lại vị trí ký tự theo key.
+ * Permutation (Transposition) Cipher – sắp xếp lại vị trí ký tự theo key
  */
 public class PermutationCipher implements ClassicCipher{
 	private static final char PADDING = 'X';

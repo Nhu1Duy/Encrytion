@@ -1,53 +1,40 @@
 package model.mordern.symmetric;
 
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.BlowfishEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.paddings.PKCS7Padding;
-import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
-
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * Blowfish – CBC mode, PKCS7 padding, sử dụng Bouncy Castle.
- *
- * Hỗ trợ key size: 32–448 bit (bội số 8).
- * Gợi ý: 128, 192, 256.
- * IV (8 bytes = block size Blowfish) được prepend vào output.
- *
- * Dependency: bcprov-jdk18on-*.jar (Bouncy Castle)
- */
 public class Blowfish implements SymmetricCipher {
 
-    private static final int IV_SIZE = 8; // Blowfish block = 64 bit
+    private static final String ALGORITHM      = "Blowfish";
+    private static final String TRANSFORMATION = "Blowfish/CBC/PKCS5Padding";
+    private static final int    IV_SIZE        = 8; 
 
-    private byte[] keyBytes;
-
-    // ── SymmetricCipher ───────────────────────────────────────────
+    private SecretKeySpec keySpec;
 
     @Override
     public void genKey(int keySize) throws Exception {
         if (keySize < 32 || keySize > 448 || keySize % 8 != 0)
             throw new IllegalArgumentException("Blowfish hỗ trợ key từ 32 đến 448 bit, bội số 8.");
-        keyBytes = new byte[keySize / 8];
-        new SecureRandom().nextBytes(keyBytes);
+        byte[] raw = new byte[keySize / 8];
+        new SecureRandom().nextBytes(raw);
+        keySpec = new SecretKeySpec(raw, ALGORITHM);
     }
 
     @Override
     public void loadKeyFromBase64(String base64Key) throws Exception {
-        keyBytes = Base64.getDecoder().decode(base64Key.trim());
+        byte[] raw = Base64.getDecoder().decode(base64Key.trim());
+        keySpec = new SecretKeySpec(raw, ALGORITHM);
     }
 
     @Override
     public String getKeyAsBase64() {
         ensureKey();
-        return Base64.getEncoder().encodeToString(keyBytes);
+        return Base64.getEncoder().encodeToString(keySpec.getEncoded());
     }
 
     @Override
@@ -55,14 +42,12 @@ public class Blowfish implements SymmetricCipher {
         return new int[]{128, 192, 256};
     }
 
-    // ── Text ─────────────────────────────────────────────────────
-
     @Override
     public String encryptText(String plaintext) throws Exception {
         ensureKey();
         byte[] iv        = generateIV();
-        byte[] data      = plaintext.getBytes(StandardCharsets.UTF_8);
-        byte[] encrypted = process(true, data, iv);
+        Cipher cipher    = buildCipher(Cipher.ENCRYPT_MODE, iv);
+        byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(concat(iv, encrypted));
     }
 
@@ -72,63 +57,42 @@ public class Blowfish implements SymmetricCipher {
         byte[] combined  = Base64.getDecoder().decode(base64Ciphertext.trim());
         byte[] iv        = extract(combined, 0, IV_SIZE);
         byte[] encrypted = extract(combined, IV_SIZE, combined.length - IV_SIZE);
-        byte[] decrypted = process(false, encrypted, iv);
-        return new String(decrypted, StandardCharsets.UTF_8);
+        Cipher cipher    = buildCipher(Cipher.DECRYPT_MODE, iv);
+        return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
     }
-
-    // ── File ─────────────────────────────────────────────────────
 
     public boolean encryptFile(String src, String des) throws Exception {
         ensureKey();
-        byte[] iv = generateIV();
-
+        byte[] iv     = generateIV();
+        Cipher cipher = buildCipher(Cipher.ENCRYPT_MODE, iv);
         try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
              BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
-
             out.write(iv);
-            byte[] plaintext = in.readAllBytes();
-            byte[] encrypted = process(true, plaintext, iv);
-            out.write(encrypted);
+            try (CipherInputStream cis = new CipherInputStream(in, cipher)) {
+                pipe(cis, out);
+            }
         }
         return true;
     }
 
     public boolean decryptFile(String src, String des) throws Exception {
         ensureKey();
-
         try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
              BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
-
-            byte[] iv        = in.readNBytes(IV_SIZE);
-            byte[] ciphertext = in.readAllBytes();
-            byte[] decrypted = process(false, ciphertext, iv);
-            out.write(decrypted);
+            byte[] iv     = in.readNBytes(IV_SIZE);
+            Cipher cipher = buildCipher(Cipher.DECRYPT_MODE, iv);
+            try (CipherOutputStream cos = new CipherOutputStream(out, cipher)) {
+                pipe(in, cos);
+            }
         }
         return true;
     }
 
-    // ── Bouncy Castle core ────────────────────────────────────────
-
-    private byte[] process(boolean forEncryption, byte[] input, byte[] iv) throws Exception {
-        BufferedBlockCipher cipher = buildCipher(forEncryption, iv);
-        byte[] output = new byte[cipher.getOutputSize(input.length)];
-        int len = cipher.processBytes(input, 0, input.length, output, 0);
-        len += cipher.doFinal(output, len);
-        byte[] result = new byte[len];
-        System.arraycopy(output, 0, result, 0, len);
-        return result;
-    }
-
-    private BufferedBlockCipher buildCipher(boolean forEncryption, byte[] iv) {
-        BlowfishEngine engine  = new BlowfishEngine();
-        CBCBlockCipher cbc     = new CBCBlockCipher(engine);
-        PaddedBufferedBlockCipher cipher = new PaddedBufferedBlockCipher(cbc, new PKCS7Padding());
-        CipherParameters params = new ParametersWithIV(new KeyParameter(keyBytes), iv);
-        cipher.init(forEncryption, params);
+    private Cipher buildCipher(int mode, byte[] iv) throws Exception {
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+        cipher.init(mode, keySpec, new IvParameterSpec(iv));
         return cipher;
     }
-
-    // ── Internal helpers ─────────────────────────────────────────
 
     private byte[] generateIV() {
         byte[] iv = new byte[IV_SIZE];
@@ -137,7 +101,13 @@ public class Blowfish implements SymmetricCipher {
     }
 
     private void ensureKey() {
-        if (keyBytes == null) throw new IllegalStateException("Key chưa được khởi tạo.");
+        if (keySpec == null) throw new IllegalStateException("Key chưa được khởi tạo.");
+    }
+
+    private static void pipe(InputStream in, OutputStream out) throws IOException {
+        byte[] buf = new byte[4096];
+        int len;
+        while ((len = in.read(buf)) != -1) out.write(buf, 0, len);
     }
 
     private static byte[] concat(byte[] a, byte[] b) {
