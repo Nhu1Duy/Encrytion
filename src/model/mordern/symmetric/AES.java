@@ -5,21 +5,20 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * DES – Data Encryption Standard (56-bit key, CBC mode với IV ngẫu nhiên).
+ * AES – Advanced Encryption Standard, CBC mode với IV ngẫu nhiên.
  *
- * Lưu ý: DES đã lỗi thời về bảo mật, chỉ dùng cho mục đích học tập.
- * IV (8 bytes) được prepend vào ciphertext khi encrypt và tách ra khi decrypt.
+ * Hỗ trợ key size: 128, 192, 256 bit.
+ * IV (16 bytes) được prepend vào ciphertext khi encrypt và tách ra khi decrypt.
  */
-public class DES implements SymmetricCipher {
+public class AES implements SymmetricCipher {
 
-    private static final String ALGORITHM    = "DES";
-    private static final String TRANSFORMATION = "DES/CBC/PKCS5Padding";
-    private static final int    IV_SIZE      = 8; // bytes
+    private static final String ALGORITHM      = "AES";
+    private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
+    private static final int    IV_SIZE        = 16; // AES block size = 128 bit
 
     private SecretKey key;
 
@@ -27,27 +26,30 @@ public class DES implements SymmetricCipher {
 
     @Override
     public void genKey(int keySize) throws Exception {
-        // DES chỉ hỗ trợ 56-bit; tham số keySize giữ để nhất quán interface
+        validateKeySize(keySize);
         KeyGenerator kg = KeyGenerator.getInstance(ALGORITHM);
-        kg.init(56);
+        kg.init(keySize);
         key = kg.generateKey();
     }
 
     @Override
     public void loadKeyFromBase64(String base64Key) throws Exception {
         byte[] raw = Base64.getDecoder().decode(base64Key.trim());
+        if (raw.length != 16 && raw.length != 24 && raw.length != 32) {
+            throw new IllegalArgumentException("Key AES phải là 16, 24 hoặc 32 bytes (128/192/256 bit).");
+        }
         key = new SecretKeySpec(raw, ALGORITHM);
     }
 
     @Override
     public String getKeyAsBase64() {
-        if (key == null) throw new IllegalStateException("Key chưa được khởi tạo.");
+        ensureKey();
         return Base64.getEncoder().encodeToString(key.getEncoded());
     }
 
     @Override
     public int[] getSupportedKeySizes() {
-        return new int[]{56};
+        return new int[]{128, 192, 256};
     }
 
     // ── Text ─────────────────────────────────────────────────────
@@ -55,53 +57,46 @@ public class DES implements SymmetricCipher {
     @Override
     public String encryptText(String plaintext) throws Exception {
         ensureKey();
-        byte[] iv = generateIV();
-        Cipher cipher = buildCipher(Cipher.ENCRYPT_MODE, iv);
+        byte[] iv        = generateIV();
+        Cipher cipher    = buildCipher(Cipher.ENCRYPT_MODE, iv);
         byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-        // Kết hợp IV + ciphertext → Base64
-        byte[] combined = concat(iv, encrypted);
-        return Base64.getEncoder().encodeToString(combined);
+        return Base64.getEncoder().encodeToString(concat(iv, encrypted));
     }
 
     @Override
     public String decryptText(String base64Ciphertext) throws Exception {
         ensureKey();
-        byte[] combined = Base64.getDecoder().decode(base64Ciphertext.trim());
+        byte[] combined  = Base64.getDecoder().decode(base64Ciphertext.trim());
         byte[] iv        = extract(combined, 0, IV_SIZE);
         byte[] encrypted = extract(combined, IV_SIZE, combined.length - IV_SIZE);
-        Cipher cipher = buildCipher(Cipher.DECRYPT_MODE, iv);
-        byte[] decrypted = cipher.doFinal(encrypted);
-        return new String(decrypted, StandardCharsets.UTF_8);
+        Cipher cipher    = buildCipher(Cipher.DECRYPT_MODE, iv);
+        return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
     }
 
     // ── File ─────────────────────────────────────────────────────
 
     /**
-     * Mã hóa file src → des. IV ngẫu nhiên được ghi 8 bytes đầu file output.
+     * Mã hóa file src → des. 16 bytes đầu output là IV.
      */
     public boolean encryptFile(String src, String des) throws Exception {
         ensureKey();
-        byte[] iv = generateIV();
+        byte[] iv     = generateIV();
         Cipher cipher = buildCipher(Cipher.ENCRYPT_MODE, iv);
 
         try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
              BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
 
-            out.write(iv); // prepend IV
+            out.write(iv);
 
             try (CipherInputStream cis = new CipherInputStream(in, cipher)) {
-                byte[] buf = new byte[4096];
-                int len;
-                while ((len = cis.read(buf)) != -1) {
-                    out.write(buf, 0, len);
-                }
+                pipe(cis, out);
             }
         }
         return true;
     }
 
     /**
-     * Giải mã file src → des. Đọc IV từ 8 bytes đầu file.
+     * Giải mã file src → des. Đọc IV từ 16 bytes đầu.
      */
     public boolean decryptFile(String src, String des) throws Exception {
         ensureKey();
@@ -109,15 +104,11 @@ public class DES implements SymmetricCipher {
         try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
              BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
 
-            byte[] iv = in.readNBytes(IV_SIZE);
+            byte[] iv     = in.readNBytes(IV_SIZE);
             Cipher cipher = buildCipher(Cipher.DECRYPT_MODE, iv);
 
             try (CipherOutputStream cos = new CipherOutputStream(out, cipher)) {
-                byte[] buf = new byte[4096];
-                int len;
-                while ((len = in.read(buf)) != -1) {
-                    cos.write(buf, 0, len);
-                }
+                pipe(in, cos);
             }
         }
         return true;
@@ -137,20 +128,31 @@ public class DES implements SymmetricCipher {
         return iv;
     }
 
+    private void validateKeySize(int bits) {
+        if (bits != 128 && bits != 192 && bits != 256)
+            throw new IllegalArgumentException("AES chỉ hỗ trợ keySize 128, 192, 256 bit.");
+    }
+
     private void ensureKey() {
-        if (key == null) throw new IllegalStateException("Key chưa được khởi tạo. Gọi genKey() hoặc loadKeyFromBase64() trước.");
+        if (key == null) throw new IllegalStateException("Key chưa được khởi tạo.");
+    }
+
+    private static void pipe(InputStream in, OutputStream out) throws IOException {
+        byte[] buf = new byte[4096];
+        int len;
+        while ((len = in.read(buf)) != -1) out.write(buf, 0, len);
     }
 
     private static byte[] concat(byte[] a, byte[] b) {
-        byte[] result = new byte[a.length + b.length];
-        System.arraycopy(a, 0, result, 0, a.length);
-        System.arraycopy(b, 0, result, a.length, b.length);
-        return result;
+        byte[] r = new byte[a.length + b.length];
+        System.arraycopy(a, 0, r, 0, a.length);
+        System.arraycopy(b, 0, r, a.length, b.length);
+        return r;
     }
 
-    private static byte[] extract(byte[] src, int offset, int length) {
-        byte[] result = new byte[length];
-        System.arraycopy(src, offset, result, 0, length);
-        return result;
+    private static byte[] extract(byte[] src, int offset, int len) {
+        byte[] r = new byte[len];
+        System.arraycopy(src, offset, r, 0, len);
+        return r;
     }
 }
