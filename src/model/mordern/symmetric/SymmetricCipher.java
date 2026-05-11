@@ -1,25 +1,23 @@
 package model.mordern.symmetric;
 
-import java.util.Base64;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 public interface SymmetricCipher {
 
-    void genKey(int keySize) throws Exception;
-
-    void loadKeyFromBase64(String base64Key) throws Exception;
-
-    String getKeyAsBase64();
-
-    int[] getSupportedKeySizes();
-
-    String encryptText(String plaintext) throws Exception;
+    void setTransformation(String mode, String padding);
     
-    String decryptText(String base64Ciphertext) throws Exception;
+    SecretKey genKey() throws Exception;
+    
+    void loadKey(SecretKey key);
+    
+    IvParameterSpec genIV();
+    
+    void loadIV(IvParameterSpec iv);
 
-    static byte[] base64ToBytes(String s) {
-        return Base64.getDecoder().decode(s.trim());
-    }
-    static String bytesToBase64(byte[] b) {
-        return Base64.getEncoder().encodeToString(b);
-    }
+    String encryptBase64(String plainText) throws Exception;
+
+    String decryptBase64(String encryptedText) throws Exception;
+
+    boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception;
 }

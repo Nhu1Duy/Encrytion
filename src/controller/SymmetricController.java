@@ -43,8 +43,8 @@ public class SymmetricController {
 		panel.getGenBtn().addActionListener(e -> {
 			try {
 				int keySize = panel.getSelectedKeySize();
-				model.genKey(keySize);
-				panel.setKeyText(model.getKeyAsBase64());
+//				model.genKey(keySize);
+//				panel.setKeyText(model.getKeyAsBase64());
 			} catch (Exception ex) {
 				showError("Lỗi sinh key: " + ex.getMessage());
 			}
@@ -92,17 +92,17 @@ public class SymmetricController {
 	    SymmetricCipher model = getModel(sp.getCurrentAlgo());
 
 	    try {
-	        model.loadKeyFromBase64(keyB64);
+//	        model.loadKeyFromBase64(keyB64);
+//
+//	        String result;
+//
+//	        if (encrypt) {
+//	            result = model.encryptText(inputText);
+//	        } else {
+//	            result = model.decryptText(inputText);
+//	        }
 
-	        String result;
-
-	        if (encrypt) {
-	            result = model.encryptText(inputText);
-	        } else {
-	            result = model.decryptText(inputText);
-	        }
-
-	        view.getOutputArea().setText(result);
+//	        view.getOutputArea().setText(result);
 
 	        if (encrypt) {
 	            view.setLanguageStatus("Mã hóa OK – " + sp.getCurrentAlgo());

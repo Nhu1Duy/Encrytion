@@ -1,125 +1,158 @@
 package model.mordern.symmetric;
 
-import javax.crypto.*;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
 public class Blowfish implements SymmetricCipher {
 
-    private static final String ALGORITHM      = "Blowfish";
-    private static final String TRANSFORMATION = "Blowfish/CBC/PKCS5Padding";
-    private static final int    IV_SIZE        = 8; 
+	private SecretKey key;
+	private IvParameterSpec iv;
+	private String algorithm = "Blowfish";
+	private String transformation = "Blowfish/CBC/PKCS5Padding";
 
-    private SecretKeySpec keySpec;
+	/**
+	 * KEY SIZE hỗ trợ: 128, 192, 256 bit
+	 */
+	private int keySize = 128;
 
-    @Override
-    public void genKey(int keySize) throws Exception {
-        if (keySize < 32 || keySize > 448 || keySize % 8 != 0)
-            throw new IllegalArgumentException("Blowfish hỗ trợ key từ 32 đến 448 bit, bội số 8.");
-        byte[] raw = new byte[keySize / 8];
-        new SecureRandom().nextBytes(raw);
-        keySpec = new SecretKeySpec(raw, ALGORITHM);
-    }
+	// =========================
+	// CHỌN KEY SIZE
+	// =========================
+	public void setKeySize(int keySize) {
+		if (keySize < 32 || keySize > 448 || keySize % 8 != 0) {
+			throw new IllegalArgumentException("Blowfish key size phải trong khoảng 32–448 bit và là bội số của 8.");
+		}
+		this.keySize = keySize;
+	}
 
-    @Override
-    public void loadKeyFromBase64(String base64Key) throws Exception {
-        byte[] raw = Base64.getDecoder().decode(base64Key.trim());
-        keySpec = new SecretKeySpec(raw, ALGORITHM);
-    }
+	// =========================
+	// SET MODE + PADDING
+	// =========================
+	@Override
+	public void setTransformation(String mode, String padding) {
+		if (mode == null || mode.isEmpty()) {
+			this.transformation = this.algorithm;
+		} else if (padding == null || padding.isEmpty()) {
+			this.transformation = this.algorithm + "/" + mode + "/PKCS5Padding";
+		} else {
+			this.transformation = this.algorithm + "/" + mode + "/" + padding;
+		}
+	}
 
-    @Override
-    public String getKeyAsBase64() {
-        ensureKey();
-        return Base64.getEncoder().encodeToString(keySpec.getEncoded());
-    }
+	// =========================
+	// TẠO KHÓA 
+	// =========================
+	@Override
+	public SecretKey genKey() throws Exception {
+		KeyGenerator keyGenerator = KeyGenerator.getInstance("Blowfish");
+		keyGenerator.init(keySize, new SecureRandom());
+		key = keyGenerator.generateKey();
+		return key;
+	}
 
-    @Override
-    public int[] getSupportedKeySizes() {
-        return new int[]{128, 192, 256};
-    }
+	@Override
+	public void loadKey(SecretKey key) {
+		this.key = key;
+	}
 
-    @Override
-    public String encryptText(String plaintext) throws Exception {
-        ensureKey();
-        byte[] iv        = generateIV();
-        Cipher cipher    = buildCipher(Cipher.ENCRYPT_MODE, iv);
-        byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(concat(iv, encrypted));
-    }
+	// =========================
+	// TẠO IV (8 byte cho Blowfish)
+	// =========================
+	@Override
+	public IvParameterSpec genIV() {
+		byte[] ivBytes = new byte[8]; 
+		iv = new IvParameterSpec(ivBytes);
+		return iv;
+	}
 
-    @Override
-    public String decryptText(String base64Ciphertext) throws Exception {
-        ensureKey();
-        byte[] combined  = Base64.getDecoder().decode(base64Ciphertext.trim());
-        byte[] iv        = extract(combined, 0, IV_SIZE);
-        byte[] encrypted = extract(combined, IV_SIZE, combined.length - IV_SIZE);
-        Cipher cipher    = buildCipher(Cipher.DECRYPT_MODE, iv);
-        return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
-    }
+	@Override
+	public void loadIV(IvParameterSpec iv) {
+		this.iv = iv;
+	}
 
-    public boolean encryptFile(String src, String des) throws Exception {
-        ensureKey();
-        byte[] iv     = generateIV();
-        Cipher cipher = buildCipher(Cipher.ENCRYPT_MODE, iv);
-        try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
-             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
-            out.write(iv);
-            try (CipherInputStream cis = new CipherInputStream(in, cipher)) {
-                pipe(cis, out);
-            }
-        }
-        return true;
-    }
+	// =========================
+	// KHỞI TẠO CIPHER
+	// =========================
+	private Cipher initCipher(int mode) throws Exception {
+		Cipher cipher = Cipher.getInstance(transformation);
 
-    public boolean decryptFile(String src, String des) throws Exception {
-        ensureKey();
-        try (BufferedInputStream  in  = new BufferedInputStream(new FileInputStream(src));
-             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(des))) {
-            byte[] iv     = in.readNBytes(IV_SIZE);
-            Cipher cipher = buildCipher(Cipher.DECRYPT_MODE, iv);
-            try (CipherOutputStream cos = new CipherOutputStream(out, cipher)) {
-                pipe(in, cos);
-            }
-        }
-        return true;
-    }
+		if (transformation.contains("ECB")) {
+			cipher.init(mode, key);
+		} else {
+			if (iv == null) genIV();
+			cipher.init(mode, key, iv);
+		}
 
-    private Cipher buildCipher(int mode, byte[] iv) throws Exception {
-        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(mode, keySpec, new IvParameterSpec(iv));
-        return cipher;
-    }
+		return cipher;
+	}
 
-    private byte[] generateIV() {
-        byte[] iv = new byte[IV_SIZE];
-        new SecureRandom().nextBytes(iv);
-        return iv;
-    }
+	// =========================
+	// MÃ HÓA TEXT -> BASE64
+	// =========================
+	@Override
+	public String encryptBase64(String plainText) throws Exception {
+		Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
+		byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
+		return Base64.getEncoder().encodeToString(encrypted);
+	}
 
-    private void ensureKey() {
-        if (keySpec == null) throw new IllegalStateException("Key chưa được khởi tạo.");
-    }
+	// =========================
+	// GIẢI MÃ BASE64 -> TEXT
+	// =========================
+	@Override
+	public String decryptBase64(String encryptedText) throws Exception {
+		byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
+		Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
+		byte[] decrypted = cipher.doFinal(encryptedBytes);
+		return new String(decrypted, StandardCharsets.UTF_8);
+	}
 
-    private static void pipe(InputStream in, OutputStream out) throws IOException {
-        byte[] buf = new byte[4096];
-        int len;
-        while ((len = in.read(buf)) != -1) out.write(buf, 0, len);
-    }
+	// =========================
+	// MÃ HÓA / GIẢI MÃ FILE
+	// =========================
+	@Override
+	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
+		int mode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+		Cipher cipher = initCipher(mode);
 
-    private static byte[] concat(byte[] a, byte[] b) {
-        byte[] r = new byte[a.length + b.length];
-        System.arraycopy(a, 0, r, 0, a.length);
-        System.arraycopy(b, 0, r, a.length, b.length);
-        return r;
-    }
+		try (
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile));
+			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))) {
 
-    private static byte[] extract(byte[] src, int offset, int len) {
-        byte[] r = new byte[len];
-        System.arraycopy(src, offset, r, 0, len);
-        return r;
-    }
+			byte[] buffer = new byte[1024];
+			int readBytes;
+
+			while ((readBytes = bis.read(buffer)) != -1) {
+				byte[] output = cipher.update(buffer, 0, readBytes);
+				if (output != null)
+					bos.write(output);
+			}
+
+			byte[] finalOutput = cipher.doFinal();
+			if (finalOutput != null)
+				bos.write(finalOutput);
+
+			return true;
+		}
+	}
+
+	// =========================
+	// GETTER THÔNG TIN
+	// =========================
+	public String getTransformation() {
+		return transformation;
+	}
+
+	public int getKeySize() {
+		return keySize;
+	}
 }
