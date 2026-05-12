@@ -13,30 +13,30 @@ public class SymmetricPanel extends JPanel {
 
 	private static final String[] ALGO_NAMES = { ALGO_AES, ALGO_DES, ALGO_BLOWFISH, ALGO_RC4 };
 
-	private static final int[][] KEY_SIZES = { { 128, 192, 256 }, { 64 }, { 128, 256, 448 }, { 128, 256, 512 }, };
+	private static final int[][] KEY_SIZES = 
+			{ { 128, 192, 256 }, 
+			{ 64 }, 
+			{ 128, 256, 448 }, 
+			{ 128, 256, 512 } 
+	};
 
-	/// --- SUB PANEL ---
 	private final SymmetricConfigPanel aesPanel;
 	private final SymmetricConfigPanel desPanel;
 	private final SymmetricConfigPanel blowfishPanel;
 	private final SymmetricConfigPanel rc4Panel;
 
-	/// --- LAYOUT ---
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel cardPanel = new JPanel(cardLayout);
-
-	/// --- BUTTON ---
 	private final JToggleButton[] tabBtns = new JToggleButton[ALGO_NAMES.length];
 	private final ButtonGroup tabGroup = new ButtonGroup();
 
 	private String currentAlgo = ALGO_AES;
 
 	public SymmetricPanel() {
-		aesPanel = new SymmetricConfigPanel(ALGO_AES, KEY_SIZES[0]);
-		desPanel = new SymmetricConfigPanel(ALGO_DES, KEY_SIZES[1]);
-		blowfishPanel = new SymmetricConfigPanel(ALGO_BLOWFISH, KEY_SIZES[2]);
-		rc4Panel = new SymmetricConfigPanel(ALGO_RC4, KEY_SIZES[3]);
-
+		aesPanel = new SymmetricConfigPanel(ALGO_AES, KEY_SIZES[0], false);
+		desPanel = new SymmetricConfigPanel(ALGO_DES, KEY_SIZES[1], false);
+		blowfishPanel = new SymmetricConfigPanel(ALGO_BLOWFISH, KEY_SIZES[2], false);
+		rc4Panel = new SymmetricConfigPanel(ALGO_RC4, KEY_SIZES[3], true);
 		initUI();
 	}
 
@@ -73,7 +73,6 @@ public class SymmetricPanel extends JPanel {
 		cardLayout.show(cardPanel, name);
 	}
 
-
 	public String getCurrentAlgo() {
 		return currentAlgo;
 	}
@@ -95,17 +94,23 @@ public class SymmetricPanel extends JPanel {
 	}
 
 	public SymmetricConfigPanel getCurrentConfigPanel() {
-	    switch (currentAlgo) {
-	        case ALGO_AES:
-	            return aesPanel;
-	        case ALGO_DES:
-	            return desPanel;
-	        case ALGO_BLOWFISH:
-	            return blowfishPanel;
-	        case ALGO_RC4:
-	            return rc4Panel;
-	        default:
-	            return aesPanel;
-	    }
+		SymmetricConfigPanel selectedPanel;
+
+		switch (currentAlgo) {
+		    case ALGO_DES:
+		        selectedPanel = desPanel;
+		        break;
+		    case ALGO_BLOWFISH:
+		        selectedPanel = blowfishPanel;
+		        break;
+		    case ALGO_RC4:
+		        selectedPanel = rc4Panel;
+		        break;
+		    default:
+		        selectedPanel = aesPanel;
+		        break;
+		}
+
+		return selectedPanel;
 	}
 }

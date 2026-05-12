@@ -13,144 +13,137 @@ import java.net.URL;
 
 public class MainFrame {
 
-    public final JFrame frame = new JFrame();
+	public final JFrame frame = new JFrame();
 
-    // ── Sub-panels  ──────────────────────────
-    public final HeaderPanel       headerPanel;
-    public final SidePanel         sidePanel;
-    public final IoPanel           ioPanel;
-    public final ClassicCipherPanel classicPanel;
-    public final SymmetricPanel     symmetricPanel;
+	// ── Sub-panels ──────────────────────────
+	public final HeaderPanel headerPanel;
+	public final SidePanel sidePanel;
+	public final IoPanel ioPanel;
+	public final ClassicCipherPanel classicPanel;
+	public final SymmetricPanel symmetricPanel;
 
-    // ── Menu items ──────────────────────────────────────────────────────────
-    // File
-    public final JMenuItem itemImportInput = new JMenuItem("📥 Import Input");
-    public final JMenuItem itemSaveOutput  = new JMenuItem("💾 Save Output");
-    public final JMenuItem itemImportKey   = new JMenuItem("📥 Import Key");
-    public final JMenuItem itemSaveKey     = new JMenuItem("💾 Save Key");
-    public final JMenuItem itemClearAll    = new JMenuItem("🗑 Xóa tất cả");
+	// ── Menu items ──────────────────────────────────────────────────────────
+	// File
+	public final JMenuItem itemImportInput = new JMenuItem("📥 Import Input");
+	public final JMenuItem itemSaveOutput = new JMenuItem("💾 Save Output");
+	public final JMenuItem itemImportKey = new JMenuItem("📥 Import Key");
+	public final JMenuItem itemSaveKey = new JMenuItem("💾 Save Key");
+	public final JMenuItem itemClearAll = new JMenuItem("🗑 Xóa tất cả");
 
-    // Thuật toán — classic
-    public final JMenuItem itemCaesar       = new JMenuItem("Dịch Chuyển (Caesar)");
-    public final JMenuItem itemSubstitution = new JMenuItem("Thay Thế (Substitution)");
-    public final JMenuItem itemAffine       = new JMenuItem("Affine");
-    public final JMenuItem itemVigenere     = new JMenuItem("Vigenere");
-    public final JMenuItem itemHill         = new JMenuItem("Hill (Ma trận)");
-    public final JMenuItem itemPermutation  = new JMenuItem("Hoán Vị (Permutation)");
+	// Thuật toán — classic
+	public final JMenuItem itemCaesar = new JMenuItem("Dịch Chuyển (Caesar)");
+	public final JMenuItem itemSubstitution = new JMenuItem("Thay Thế (Substitution)");
+	public final JMenuItem itemAffine = new JMenuItem("Affine");
+	public final JMenuItem itemVigenere = new JMenuItem("Vigenere");
+	public final JMenuItem itemHill = new JMenuItem("Hill (Ma trận)");
+	public final JMenuItem itemPermutation = new JMenuItem("Hoán Vị (Permutation)");
 
-    // Thuật toán — symmetric
-    public final JMenuItem itemSymmetric = new JMenuItem("Đối Xứng Hiện Đại (Symmetric)");
+	// Thuật toán — symmetric
+	public final JMenuItem itemSymmetric = new JMenuItem("Đối Xứng Hiện Đại (Symmetric)");
 
-    // Ngôn ngữ
-    public final JMenuItem itemVN = new JMenuItem("Tiếng Việt");
-    public final JMenuItem itemEN = new JMenuItem("English");
+	// Ngôn ngữ
+	public final JMenuItem itemVN = new JMenuItem("Tiếng Việt");
+	public final JMenuItem itemEN = new JMenuItem("English");
 
-    // ── Constructor ─────────────────────────────────────────────────────────
+	// ── Constructor ─────────────────────────────────────────────────────────
 
-    public MainFrame() {
-        headerPanel    = new HeaderPanel();
-        sidePanel      = new SidePanel();
-        ioPanel        = new IoPanel();
-        classicPanel   = new ClassicCipherPanel();
-        symmetricPanel = new SymmetricPanel();
+	public MainFrame() {
+		headerPanel = new HeaderPanel();
+		sidePanel = new SidePanel();
+		ioPanel = new IoPanel();
+		classicPanel = new ClassicCipherPanel();
+		symmetricPanel = new SymmetricPanel();
 
-        configureFrame();
-        buildMenuBar();
-        registerSideCards();
-        wireIoToolbarButtons();
+		configureFrame();
+		buildMenuBar();
+		registerSideCards();
+		wireIoToolbarButtons();
 
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-    }
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+	}
 
-    // ── setup ────────────────────────────────────────────────────────
+	// ── setup ────────────────────────────────────────────────────────
 
-    private void configureFrame() {
-        frame.setTitle("Công cụ mã hóa");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(980, 620);
-        frame.setLayout(new BorderLayout(10, 10));
+	private void configureFrame() {
+		frame.setTitle("Công cụ mã hóa");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setSize(980, 620);
+		frame.setLayout(new BorderLayout(10, 10));
 
-        URL icon = getClass().getResource("icon.png");
-        if (icon != null) frame.setIconImage(new ImageIcon(icon).getImage());
+		URL icon = getClass().getResource("icon.png");
+		if (icon != null)
+			frame.setIconImage(new ImageIcon(icon).getImage());
 
-        frame.add(headerPanel, BorderLayout.NORTH);
-        frame.add(sidePanel,   BorderLayout.WEST);
-        frame.add(ioPanel,     BorderLayout.CENTER);
-    }
+		frame.add(headerPanel, BorderLayout.NORTH);
+		frame.add(sidePanel, BorderLayout.WEST);
+		frame.add(ioPanel, BorderLayout.CENTER);
+	}
 
-    private void registerSideCards() {
-        sidePanel.addCard(classicPanel,   "Classic");
-        sidePanel.addCard(symmetricPanel, "Symmetric");
-        sidePanel.showCard("Classic");
-    }
+	private void registerSideCards() {
+		sidePanel.addCard(classicPanel, "Classic");
+		sidePanel.addCard(symmetricPanel, "Symmetric");
+		sidePanel.showCard("Classic");
+	}
 
-    private void wireIoToolbarButtons() {
-        ioPanel.addInputToolbarButton("📂 Import",  () -> itemImportInput.doClick());
-        ioPanel.addOutputToolbarButton("💾 Save",   () -> itemSaveOutput.doClick());
-    }
+	private void wireIoToolbarButtons() {
+		ioPanel.addInputToolbarButton("📂 Import", () -> itemImportInput.doClick());
+		ioPanel.addOutputToolbarButton("💾 Save", () -> itemSaveOutput.doClick());
+	}
 
-    private void buildMenuBar() {
-        JMenuBar bar = new JMenuBar();
+	private void buildMenuBar() {
+		JMenuBar bar = new JMenuBar();
 
-        JMenu fileMenu = new JMenu("File ▼");
-        fileMenu.add(itemImportInput);
-        fileMenu.add(itemSaveOutput);
-        fileMenu.addSeparator();
-        fileMenu.add(itemImportKey);
-        fileMenu.add(itemSaveKey);
-        fileMenu.addSeparator();
-        fileMenu.add(itemClearAll);
+		JMenu fileMenu = new JMenu("File ▼");
+		fileMenu.add(itemImportInput);
+		fileMenu.add(itemSaveOutput);
+		fileMenu.addSeparator();
+		fileMenu.add(itemImportKey);
+		fileMenu.add(itemSaveKey);
+		fileMenu.addSeparator();
+		fileMenu.add(itemClearAll);
 
-        JMenu algoMenu = new JMenu("Thuật toán ▼");
-        JMenu classicSubMenu = new JMenu("Cổ Điển");
-        classicSubMenu.add(itemCaesar);
-        classicSubMenu.add(itemSubstitution);
-        classicSubMenu.add(itemAffine);
-        classicSubMenu.add(itemVigenere);
-        classicSubMenu.add(itemHill);
-        classicSubMenu.add(itemPermutation);
-        algoMenu.add(classicSubMenu);
-        algoMenu.addSeparator();
-        algoMenu.add(itemSymmetric);
+		JMenu algoMenu = new JMenu("Thuật toán ▼");
+		JMenu classicSubMenu = new JMenu("Cổ Điển");
+		classicSubMenu.add(itemCaesar);
+		classicSubMenu.add(itemSubstitution);
+		classicSubMenu.add(itemAffine);
+		classicSubMenu.add(itemVigenere);
+		classicSubMenu.add(itemHill);
+		classicSubMenu.add(itemPermutation);
+		algoMenu.add(classicSubMenu);
+		algoMenu.addSeparator();
+		algoMenu.add(itemSymmetric);
 
-        JMenu langMenu = new JMenu("Ngôn ngữ ▼");
-        langMenu.add(itemVN);
-        langMenu.add(itemEN);
+		JMenu langMenu = new JMenu("Ngôn ngữ ▼");
+		langMenu.add(itemVN);
+		langMenu.add(itemEN);
 
-        bar.add(fileMenu);
-        bar.add(algoMenu);
-        bar.add(langMenu);
-        frame.setJMenuBar(bar);
-    }
+		bar.add(fileMenu);
+		bar.add(algoMenu);
+		bar.add(langMenu);
+		frame.setJMenuBar(bar);
+	}
 
-    // ── shortcuts ────────────────────────────────────────────────────────────
+	// ── shortcuts ────────────────────────────────────────────────────────────
 
-    public void switchToClassic(String cipherName) {
-        sidePanel.showCard("Classic");
-        classicPanel.showCipher(cipherName);
-        sidePanel.showCard("Classic");  
-        updateSideTitle(cipherName);
-    }
+	public void switchToClassic(String cipherName) {
+	    sidePanel.showCard("Classic " + cipherName);
+	    classicPanel.showCipher(cipherName);
+	    setStatus("Thuật toán: " + cipherName);
+	}
 
-    public void switchToSymmetric() {
-        sidePanel.showCard("Symmetric");
-        updateSideTitle("Symmetric");
-    }
+	public void switchToSymmetric() {
+	    sidePanel.showCard("Symmetric");
+	    setStatus("Thuật toán: Đối xứng hiện đại");
+	}
 
-    private void updateSideTitle(String name) {
-        sidePanel.showCard(name.equals("Symmetric") ? "Symmetric" : "Classic");
-    }
+	public void setStatus(String text) {
+	    headerPanel.setStatus(text);
+	}
 
-    public void setStatus(String text) {
-        headerPanel.setStatus(text);
-    }
-
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            MainFrame mf = new MainFrame();
-            new AppController(mf).bind();
-        });
-    }
+	public static void main(String[] args) {
+		MainFrame mf = new MainFrame();
+		new AppController(mf).bind();
+	}
 }

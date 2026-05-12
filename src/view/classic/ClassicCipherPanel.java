@@ -51,15 +51,22 @@ public class ClassicCipherPanel extends JPanel {
 	}
 
 	public KeyPanel getKeyPanel(String method) {
-		return switch (method) {
-		case CAESAR -> caesarPanel;
-		case SUBSTITUTION -> substitutionPanel;
-		case AFFINE -> affinePanel;
-		case VIGENERE -> vigenerePanel;
-		case HILL -> hillPanel;
-		case PERMUTATION -> permutationPanel;
-		default -> null;
-		};
+	    switch (method) {
+	        case CAESAR:
+	            return caesarPanel;
+	        case SUBSTITUTION:
+	            return substitutionPanel;
+	        case AFFINE:
+	            return affinePanel;
+	        case VIGENERE:
+	            return vigenerePanel;
+	        case HILL:
+	            return hillPanel;
+	        case PERMUTATION:
+	            return permutationPanel;
+	        default:
+	            return null;
+	    }
 	}
 
 	// ── getters  ──────────────────────────────────────────────────

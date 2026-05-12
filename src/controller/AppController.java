@@ -1,12 +1,8 @@
 package controller;
 
-import controller.classic.ClassicActionController;
-import controller.classic.ClassicFileController;
-import controller.classic.ClassicKeyValidator;
-import controller.classic.HillKeyParser;
-import controller.symmetric.SymmetricActionController;
+import controller.classic.*;
+import controller.symmetric.*;
 import view.MainFrame;
-
 
 public class AppController {
 
@@ -14,27 +10,31 @@ public class AppController {
     private final MenuController           menuController;
     private final ClassicActionController  classicActionController;
     private final ClassicFileController    classicFileController;
+    private final SymmetricKeyValidator    symKeyValidator;
     private final SymmetricActionController symmetricActionController;
+    private final SymmetricFileController   symmetricFileController;
 
     public AppController(MainFrame view) {
         ctx = new AppContext(view);
 
-        // Classic helpers
-        ClassicKeyValidator validator     = new ClassicKeyValidator(ctx);
-        HillKeyParser       hillKeyParser = new HillKeyParser(ctx);
+        // Classic
+        ClassicKeyValidator classicKeyValidator = new ClassicKeyValidator(ctx);
+        HillKeyParser       hillKeyParser       = new HillKeyParser(ctx);
+        menuController           = new MenuController(ctx);
+        classicActionController  = new ClassicActionController(ctx, classicKeyValidator);
+        classicFileController    = new ClassicFileController(ctx, hillKeyParser);
 
-        // Khởi tạo controllers
-        menuController            = new MenuController(ctx);
-        classicActionController   = new ClassicActionController(ctx, validator);
-        classicFileController     = new ClassicFileController(ctx, hillKeyParser);
-        symmetricActionController = new SymmetricActionController(ctx);
+        // Symmetric
+        symKeyValidator          = new SymmetricKeyValidator(ctx);
+        symmetricActionController = new SymmetricActionController(ctx, symKeyValidator);
+        symmetricFileController   = new SymmetricFileController(ctx, symKeyValidator);
     }
 
-    /** Bind tất cả event listeners — gọi một lần sau khi frame đã visible */
     public void bind() {
         menuController.bind();
         classicActionController.bind();
         classicFileController.bind();
         symmetricActionController.bind();
+        symmetricFileController.bind();
     }
 }
