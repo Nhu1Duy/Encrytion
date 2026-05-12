@@ -1,41 +1,60 @@
 package controller;
 
+import view.MainFrame;
+import view.classic.ClassicCipherPanel;
+
 public class MenuController {
 
-	private final ControllerContext ctx;
+	private final AppContext ctx;
+	private final MainFrame view;
 
-	public MenuController(ControllerContext ctx) {
+	public MenuController(AppContext ctx) {
 		this.ctx = ctx;
+		this.view = ctx.view;
 	}
 
 	public void bind() {
-		bindAlgorithmMenu();
-		bindLanguageMenu();
+		bindClassicMenuItems();
+		bindSymmetricMenuItem();
+		bindLanguageMenuItems();
 	}
 
-	private void bindAlgorithmMenu() {
-		ctx.view.getItemCaesar().addActionListener(e -> switchMethod(ControllerContext.METHOD_CAESAR));
-		ctx.view.getItemSubstitution().addActionListener(e -> switchMethod(ControllerContext.METHOD_SUBSTITUTION));
-		ctx.view.getItemAffine().addActionListener(e -> switchMethod(ControllerContext.METHOD_AFFINE));
-		ctx.view.getItemVigenere().addActionListener(e -> switchMethod(ControllerContext.METHOD_VIGENERE));
-		ctx.view.getItemHill().addActionListener(e -> switchMethod(ControllerContext.METHOD_HILL));
-		ctx.view.getItemPermutation().addActionListener(e -> switchMethod(ControllerContext.METHOD_PERMUTATION));
-		ctx.view.getItemSymmetric().addActionListener(e -> switchMethod(ControllerContext.METHOD_SYMMETRIC));
+	// ── Classic ───────────────────────────────────────────────────────────────
+
+	private void bindClassicMenuItems() {
+		view.itemCaesar.addActionListener(e -> switchClassic(ClassicCipherPanel.CAESAR));
+		view.itemSubstitution.addActionListener(e -> switchClassic(ClassicCipherPanel.SUBSTITUTION));
+		view.itemAffine.addActionListener(e -> switchClassic(ClassicCipherPanel.AFFINE));
+		view.itemVigenere.addActionListener(e -> switchClassic(ClassicCipherPanel.VIGENERE));
+		view.itemHill.addActionListener(e -> switchClassic(ClassicCipherPanel.HILL));
+		view.itemPermutation.addActionListener(e -> switchClassic(ClassicCipherPanel.PERMUTATION));
 	}
 
-	private void bindLanguageMenu() {
-		ctx.view.getItemVN().addActionListener(e -> {
-			ctx.currentLanguage = ControllerContext.LANG_VN;
-			ctx.view.setLanguageStatus(ControllerContext.LANG_VN);
+	private void switchClassic(String cipherName) {
+		ctx.currentMode = AppContext.MODE_CLASSIC;
+		ctx.classicMethod = cipherName;
+		view.switchToClassic(cipherName);
+	}
+
+	// ── Symmetric ─────────────────────────────────────────────────────────────
+
+	private void bindSymmetricMenuItem() {
+		view.itemSymmetric.addActionListener(e -> {
+			ctx.currentMode = AppContext.MODE_SYMMETRIC;
+			view.switchToSymmetric();
 		});
-		ctx.view.getItemEN().addActionListener(e -> {
-			ctx.currentLanguage = ControllerContext.LANG_EN;
-			ctx.view.setLanguageStatus(ControllerContext.LANG_EN);
-		});
 	}
 
-	private void switchMethod(String methodId) {
-		ctx.currentMethod = methodId;
-		ctx.view.showLayout(methodId);
+	// ── Ngôn ngữ ──────────────────────────────────────────────────────────────
+
+	private void bindLanguageMenuItems() {
+		view.itemVN.addActionListener(e -> {
+			ctx.currentLanguage = AppContext.LANG_VN;
+			view.setStatus("Ngôn ngữ: Tiếng Việt (VN)");
+		});
+		view.itemEN.addActionListener(e -> {
+			ctx.currentLanguage = AppContext.LANG_EN;
+			view.setStatus("Ngôn ngữ: English (EN)");
+		});
 	}
 }
