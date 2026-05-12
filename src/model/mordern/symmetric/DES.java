@@ -1,12 +1,14 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
+import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -56,7 +58,9 @@ public class DES implements SymmetricCipher {
 	// =========================
 	@Override
 	public IvParameterSpec genIV() {
-		iv = new IvParameterSpec(new byte[8]);
+		byte[] ivBytes = new byte[8];
+		new SecureRandom().nextBytes(ivBytes);
+		iv = new IvParameterSpec(ivBytes);
 		return iv;
 	}
 
@@ -117,38 +121,58 @@ public class DES implements SymmetricCipher {
 	// =========================
 	@Override
 	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-
-		int mode;
-
 		if (encrypt) {
-			mode = Cipher.ENCRYPT_MODE;
+			try (
+				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
+				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
+			) {
+				if (!transformation.contains("ECB")) {
+					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
+					genIV();
+					bos.write(iv.getIV());
+				} else {
+					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
+				}
+				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
+				byte[] buffer = new byte[4096];
+				int n;
+				while ((n = bis.read(buffer)) != -1) {
+					byte[] chunk = cipher.update(buffer, 0, n);
+					if (chunk != null) bos.write(chunk);
+				}
+				byte[] finalOut = cipher.doFinal();
+				if (finalOut != null) bos.write(finalOut);
+			}
 		} else {
-			mode = Cipher.DECRYPT_MODE;
-		}
+			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
+				String realDest = HeaderManager.readHeader(bis, destFile);
 
-		Cipher cipher = initCipher(mode);
+				if (!transformation.contains("ECB")) {
+					byte[] ivBytes = new byte[8];
+					int total = 0;
+					while (total < 8) {
+						int n = bis.read(ivBytes, total, 8 - total);
+						if (n == -1) throw new Exception("File bị hỏng: không đọc được IV.");
+						total += n;
+					}
+					iv = new IvParameterSpec(ivBytes);
+				}
 
-		try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile));
-				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))) {
-			byte[] buffer = new byte[1024];
-
-			int readBytes;
-
-			while ((readBytes = bis.read(buffer)) != -1) {
-				byte[] output = cipher.update(buffer, 0, readBytes);
-				if (output != null) {
-					bos.write(output);
+				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
+				try (BufferedOutputStream out =
+						new BufferedOutputStream(new FileOutputStream(realDest))) {
+					byte[] buffer = new byte[4096];
+					int n;
+					while ((n = bis.read(buffer)) != -1) {
+						byte[] chunk = cipher.update(buffer, 0, n);
+						if (chunk != null) out.write(chunk);
+					}
+					byte[] finalOut = cipher.doFinal();
+					if (finalOut != null) out.write(finalOut);
 				}
 			}
-
-			byte[] finalOutput = cipher.doFinal();
-
-			if (finalOutput != null) {
-				bos.write(finalOutput);
-			}
-
-			return true;
 		}
+		return true;
 	}
 
 	// =========================

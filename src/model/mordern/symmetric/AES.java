@@ -1,12 +1,14 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
+import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -72,12 +74,8 @@ public class AES implements SymmetricCipher {
 	// =========================
 	@Override
 	public IvParameterSpec genIV() {
-		byte[] ivBytes;
-		if (transformation.contains("GCM")) {
-			ivBytes = new byte[12];
-		} else {
-			ivBytes = new byte[16];
-		}
+		byte[] ivBytes = new byte[transformation.contains("GCM") ? 12 : 16];
+		new SecureRandom().nextBytes(ivBytes);
 		iv = new IvParameterSpec(ivBytes);
 		return iv;
 	}
@@ -133,28 +131,64 @@ public class AES implements SymmetricCipher {
 	// =========================
 	@Override
 	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		int mode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-		Cipher cipher = initCipher(mode);
-
-		try (
-			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile));
-			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))) {
-
-			byte[] buffer = new byte[1024];
-			int readBytes;
-
-			while ((readBytes = bis.read(buffer)) != -1) {
-				byte[] output = cipher.update(buffer, 0, readBytes);
-				if (output != null)
-					bos.write(output);
+		if (encrypt) {
+			// ── ENCRYPT: ghi header + IV vào đầu file, rồi ghi ciphertext ──────
+			try (
+				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
+				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
+			) {
+				if (!transformation.contains("ECB")) {
+					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
+					genIV();
+					bos.write(iv.getIV());
+				} else {
+					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
+				}
+				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
+				byte[] buffer = new byte[4096];
+				int n;
+				while ((n = bis.read(buffer)) != -1) {
+					byte[] chunk = cipher.update(buffer, 0, n);
+					if (chunk != null) bos.write(chunk);
+				}
+				byte[] finalOut = cipher.doFinal();
+				if (finalOut != null) bos.write(finalOut);
 			}
+		} else {
+			// ── DECRYPT: đọc header + IV từ file nguồn, ghi plaintext ra file đúng tên ──
+			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
+				// 1. Đọc header → lấy tên file gốc
+				String realDest = HeaderManager.readHeader(bis, destFile);
 
-			byte[] finalOutput = cipher.doFinal();
-			if (finalOutput != null)
-				bos.write(finalOutput);
+				// 2. Đọc IV (trừ ECB)
+				if (!transformation.contains("ECB")) {
+					int ivLen = transformation.contains("GCM") ? 12 : 16;
+					byte[] ivBytes = new byte[ivLen];
+					int total = 0;
+					while (total < ivLen) {
+						int n = bis.read(ivBytes, total, ivLen - total);
+						if (n == -1) throw new Exception("File bị hỏng: không đọc được IV.");
+						total += n;
+					}
+					iv = new IvParameterSpec(ivBytes);
+				}
 
-			return true;
+				// 3. Giải mã vào file tên gốc
+				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
+				try (BufferedOutputStream out =
+						new BufferedOutputStream(new FileOutputStream(realDest))) {
+					byte[] buffer = new byte[4096];
+					int n;
+					while ((n = bis.read(buffer)) != -1) {
+						byte[] chunk = cipher.update(buffer, 0, n);
+						if (chunk != null) out.write(chunk);
+					}
+					byte[] finalOut = cipher.doFinal();
+					if (finalOut != null) out.write(finalOut);
+				}
+			}
 		}
+		return true;
 	}
 
 	// =========================

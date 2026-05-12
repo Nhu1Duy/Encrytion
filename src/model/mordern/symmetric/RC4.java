@@ -1,12 +1,14 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
+import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -109,28 +111,40 @@ public class RC4 implements SymmetricCipher {
 	// =========================
 	@Override
 	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		int mode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-		Cipher cipher = initCipher(mode);
-
-		try (
-			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile));
-			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))) {
-
-			byte[] buffer = new byte[1024];
-			int readBytes;
-
-			while ((readBytes = bis.read(buffer)) != -1) {
-				byte[] output = cipher.update(buffer, 0, readBytes);
-				if (output != null)
-					bos.write(output);
+		if (encrypt) {
+			try (
+				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
+				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
+			) {
+				HeaderManager.writeHeader(bos, new File(sourceFile).getName());
+				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
+				byte[] buffer = new byte[4096];
+				int n;
+				while ((n = bis.read(buffer)) != -1) {
+					byte[] chunk = cipher.update(buffer, 0, n);
+					if (chunk != null) bos.write(chunk);
+				}
+				byte[] finalOut = cipher.doFinal();
+				if (finalOut != null) bos.write(finalOut);
 			}
-
-			byte[] finalOutput = cipher.doFinal();
-			if (finalOutput != null)
-				bos.write(finalOutput);
-
-			return true;
+		} else {
+			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
+				String realDest = HeaderManager.readHeader(bis, destFile);
+				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
+				try (BufferedOutputStream out =
+						new BufferedOutputStream(new FileOutputStream(realDest))) {
+					byte[] buffer = new byte[4096];
+					int n;
+					while ((n = bis.read(buffer)) != -1) {
+						byte[] chunk = cipher.update(buffer, 0, n);
+						if (chunk != null) out.write(chunk);
+					}
+					byte[] finalOut = cipher.doFinal();
+					if (finalOut != null) out.write(finalOut);
+				}
+			}
 		}
+		return true;
 	}
 
 	// =========================

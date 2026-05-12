@@ -33,6 +33,7 @@ public class MenuController {
 	private void switchClassic(String cipherName) {
 		ctx.currentMode = AppContext.MODE_CLASSIC;
 		ctx.classicMethod = cipherName;
+		ctx.view.sidePanel.setFileSectionVisible(false);
 		view.switchToClassic(cipherName);
 	}
 
@@ -41,6 +42,7 @@ public class MenuController {
 	private void bindSymmetricMenuItem() {
 		view.itemSymmetric.addActionListener(e -> {
 			ctx.currentMode = AppContext.MODE_SYMMETRIC;
+			ctx.view.sidePanel.setFileSectionVisible(true);
 			view.switchToSymmetric();
 		});
 	}

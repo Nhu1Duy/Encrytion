@@ -53,15 +53,23 @@ public class ClassicActionController {
 	}
 
 	private String handleCipher(String input, boolean enc) throws Exception {
-		return switch (ctx.classicMethod) {
-		case ClassicCipherPanel.CAESAR -> handleCaesar(input, enc);
-		case ClassicCipherPanel.SUBSTITUTION -> handleSubstitution(input, enc);
-		case ClassicCipherPanel.AFFINE -> handleAffine(input, enc);
-		case ClassicCipherPanel.VIGENERE -> handleVigenere(input, enc);
-		case ClassicCipherPanel.HILL -> handleHill(input, enc);
-		case ClassicCipherPanel.PERMUTATION -> handlePermutation(input, enc);
-		default -> throw new IllegalStateException("Cipher không xác định: " + ctx.classicMethod);
-		};
+		String method = ctx.classicMethod;
+		switch (method) {
+		case ClassicCipherPanel.CAESAR:
+			return handleCaesar(input, enc);
+		case ClassicCipherPanel.SUBSTITUTION:
+			return handleSubstitution(input, enc);
+		case ClassicCipherPanel.AFFINE:
+			return handleAffine(input, enc);
+		case ClassicCipherPanel.VIGENERE:
+			return handleVigenere(input, enc);
+		case ClassicCipherPanel.HILL:
+			return handleHill(input, enc);
+		case ClassicCipherPanel.PERMUTATION:
+			return handlePermutation(input, enc);
+		default:
+			throw new IllegalStateException("Cipher không xác định: " + method);
+		}
 	}
 
 	// ── cipher handler ───────────────────────────────────────────────────
