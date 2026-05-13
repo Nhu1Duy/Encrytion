@@ -4,11 +4,15 @@ import controller.AppContext;
 import util.FileManager;
 import view.symmetric.SymmetricConfigPanel;
 
+import java.awt.Component;
+import java.awt.Container;
 import java.io.File;
 
 import javax.crypto.SecretKey;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class SymmetricFileController {
 
@@ -33,38 +37,77 @@ public class SymmetricFileController {
 
 	// ── Browse ───────────────────────────────────────────────────────────────
 
+	/**
+	 * Duyệt đệ quy toàn bộ component của JFileChooser,
+	 * vô hiệu hóa mọi JTextField để người dùng không gõ/paste tên file được.
+	 */
+	private void disableFileNameField(JFileChooser fc) {
+		SwingUtilities.invokeLater(() -> disableTextFieldsRecursive(fc));
+	}
+
+	private void disableTextFieldsRecursive(Component c) {
+		if (c instanceof JTextField tf) {
+			tf.setEditable(false);
+			tf.setFocusable(false);
+		}
+		if (c instanceof Container container) {
+			for (Component child : container.getComponents()) {
+				disableTextFieldsRecursive(child);
+			}
+		}
+	}
+
 	private void browseInput() {
 		JFileChooser fc = new JFileChooser();
 		fc.setAcceptAllFileFilterUsed(true);
+		disableFileNameField(fc);
+
 		if (fc.showOpenDialog(ctx.view.frame) != JFileChooser.APPROVE_OPTION) return;
 
 		File f = fc.getSelectedFile();
 		ctx.view.sidePanel.getInputPathField().setText(f.getAbsolutePath());
 
+		// Tự động tạo tên file đích: cùng thư mục + tên file nguồn + ".enc"
+		// (hoặc bỏ ".enc" nếu file nguồn đã có đuôi ".enc")
 		String name = f.getName();
-		if (name.endsWith(".enc")) {
-			ctx.view.sidePanel.getOutputPathField()
-				.setText(f.getParent() + File.separator + "output.tmp");
-		} else {
-			ctx.view.sidePanel.getOutputPathField()
-				.setText(f.getAbsolutePath() + ".enc");
-		}
+		String outputName = name.endsWith(".enc")
+				? name.substring(0, name.length() - 4)
+				: name + ".enc";
+		ctx.view.sidePanel.getOutputPathField()
+				.setText(f.getParent() + File.separator + outputName);
 	}
+
 	private void browseOutput() {
-	    JFileChooser fc = new JFileChooser();
-	    fc.setAcceptAllFileFilterUsed(true);
-	    fc.setDialogTitle("Chọn vị trí lưu file output");
+		// Chỉ cho chọn thư mục đích — tên file giữ nguyên từ file nguồn
+		JFileChooser fc = new JFileChooser();
+		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fc.setDialogTitle("Chọn thư mục lưu file output");
+		disableFileNameField(fc);
 
-	    // Gợi ý tên file từ field hiện tại
-	    String currentOut = ctx.view.sidePanel.getOutputPathField().getText().trim();
-	    if (!currentOut.isEmpty()) {
-	        fc.setSelectedFile(new File(currentOut));
-	    }
+		// Mở tại thư mục hiện tại của output field (nếu có)
+		String currentOut = ctx.view.sidePanel.getOutputPathField().getText().trim();
+		if (!currentOut.isEmpty()) {
+			File currentFile = new File(currentOut);
+			fc.setCurrentDirectory(currentFile.getParentFile() != null
+					? currentFile.getParentFile() : currentFile);
+		}
 
-	    if (fc.showSaveDialog(ctx.view.frame) != JFileChooser.APPROVE_OPTION) return;
+		if (fc.showOpenDialog(ctx.view.frame) != JFileChooser.APPROVE_OPTION) return;
 
-	    ctx.view.sidePanel.getOutputPathField()
-	        .setText(fc.getSelectedFile().getAbsolutePath());
+		// Lấy tên file từ input path, ghép với thư mục mới được chọn
+		String inputPath = ctx.view.sidePanel.getInputPathField().getText().trim();
+		String outputFileName;
+		if (!inputPath.isEmpty()) {
+			String inputName = new File(inputPath).getName();
+			outputFileName = inputName.endsWith(".enc")
+					? inputName.substring(0, inputName.length() - 4)
+					: inputName + ".enc";
+		} else {
+			outputFileName = "output.enc";
+		}
+
+		ctx.view.sidePanel.getOutputPathField()
+				.setText(fc.getSelectedFile().getAbsolutePath() + File.separator + outputFileName);
 	}
 
 	// ── Handle File ──────────────────────────────────────────────────────────
@@ -81,9 +124,9 @@ public class SymmetricFileController {
 			ctx.currentSymModel().setTransformation(
 				panel.getSelectedMode(), panel.getSelectedPadding());
 
-			boolean ok = processFile(src, dst, encrypt); 
-	        if (!ok) return;  
-	        
+			boolean ok = processFile(src, dst, encrypt);
+			if (!ok) return;
+
 			String location = encrypt ? dst : new File(dst).getParent();
 			JOptionPane.showMessageDialog(ctx.view.frame,
 				(encrypt ? "Mã hóa" : "Giải mã") + " file thành công!\n→ " + location,

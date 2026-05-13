@@ -1,14 +1,12 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
-import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -132,17 +130,14 @@ public class AES implements SymmetricCipher {
 	@Override
 	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
 		if (encrypt) {
-			// ── ENCRYPT: ghi header + IV vào đầu file, rồi ghi ciphertext ──────
+			// ── ENCRYPT: ghi IV vào đầu file, rồi ghi ciphertext ──────
 			try (
 				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
 				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
 			) {
 				if (!transformation.contains("ECB")) {
-					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
 					genIV();
 					bos.write(iv.getIV());
-				} else {
-					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
 				}
 				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
 				byte[] buffer = new byte[4096];
@@ -155,12 +150,9 @@ public class AES implements SymmetricCipher {
 				if (finalOut != null) bos.write(finalOut);
 			}
 		} else {
-			// ── DECRYPT: đọc header + IV từ file nguồn, ghi plaintext ra file đúng tên ──
+			// ── DECRYPT: đọc IV từ file nguồn, ghi plaintext ra destFile ──
 			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
-				// 1. Đọc header → lấy tên file gốc
-				String realDest = HeaderManager.readHeader(bis, destFile);
-
-				// 2. Đọc IV (trừ ECB)
+				// Đọc IV (trừ ECB)
 				if (!transformation.contains("ECB")) {
 					int ivLen = transformation.contains("GCM") ? 12 : 16;
 					byte[] ivBytes = new byte[ivLen];
@@ -173,10 +165,8 @@ public class AES implements SymmetricCipher {
 					iv = new IvParameterSpec(ivBytes);
 				}
 
-				// 3. Giải mã vào file tên gốc
 				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-				try (BufferedOutputStream out =
-						new BufferedOutputStream(new FileOutputStream(realDest))) {
+				try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile))) {
 					byte[] buffer = new byte[4096];
 					int n;
 					while ((n = bis.read(buffer)) != -1) {

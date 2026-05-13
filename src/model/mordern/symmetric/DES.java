@@ -1,14 +1,12 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
-import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -40,11 +38,9 @@ public class DES implements SymmetricCipher {
 	// =========================
 	@Override
 	public SecretKey genKey() throws Exception {
-
 		KeyGenerator keyGenerator = KeyGenerator.getInstance("DES");
 		keyGenerator.init(keySize, new SecureRandom());
 		key = keyGenerator.generateKey();
-
 		return key;
 	}
 
@@ -78,12 +74,8 @@ public class DES implements SymmetricCipher {
 		if (transformation.equals("ARCFOUR") || transformation.contains("ECB")) {
 			cipher.init(mode, key);
 		} else {
-			if (iv == null) {
-				genIV();
-			}
-
-			IvParameterSpec ivSpec = iv;
-			cipher.init(mode, key, ivSpec);
+			if (iv == null) genIV();
+			cipher.init(mode, key, iv);
 		}
 
 		return cipher;
@@ -94,9 +86,7 @@ public class DES implements SymmetricCipher {
 	// =========================
 	@Override
 	public String encryptBase64(String plainText) throws Exception {
-
 		Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-
 		byte[] data = plainText.getBytes(StandardCharsets.UTF_8);
 		byte[] encrypted = cipher.doFinal(data);
 		return Base64.getEncoder().encodeToString(encrypted);
@@ -107,11 +97,8 @@ public class DES implements SymmetricCipher {
 	// =========================
 	@Override
 	public String decryptBase64(String encryptedText) throws Exception {
-
 		byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
-
 		Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-
 		byte[] decrypted = cipher.doFinal(encryptedBytes);
 		return new String(decrypted, StandardCharsets.UTF_8);
 	}
@@ -127,11 +114,8 @@ public class DES implements SymmetricCipher {
 				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
 			) {
 				if (!transformation.contains("ECB")) {
-					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
 					genIV();
 					bos.write(iv.getIV());
-				} else {
-					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
 				}
 				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
 				byte[] buffer = new byte[4096];
@@ -145,8 +129,6 @@ public class DES implements SymmetricCipher {
 			}
 		} else {
 			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
-				String realDest = HeaderManager.readHeader(bis, destFile);
-
 				if (!transformation.contains("ECB")) {
 					byte[] ivBytes = new byte[8];
 					int total = 0;
@@ -159,8 +141,7 @@ public class DES implements SymmetricCipher {
 				}
 
 				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-				try (BufferedOutputStream out =
-						new BufferedOutputStream(new FileOutputStream(realDest))) {
+				try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile))) {
 					byte[] buffer = new byte[4096];
 					int n;
 					while ((n = bis.read(buffer)) != -1) {
@@ -185,5 +166,4 @@ public class DES implements SymmetricCipher {
 	public int getKeySize() {
 		return keySize;
 	}
-
 }

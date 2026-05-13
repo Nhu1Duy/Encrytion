@@ -1,14 +1,12 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
-import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -25,7 +23,6 @@ public class RC4 implements SymmetricCipher {
 	 *
 	 * KEY SIZE hỗ trợ: 40 – 1024 bit (bội số của 8)
 	 */
-
 	private int keySize = 128;
 
 	// =========================
@@ -39,7 +36,7 @@ public class RC4 implements SymmetricCipher {
 	}
 
 	// =========================
-	// SET MODE + PADDING 
+	// SET MODE + PADDING
 	// =========================
 	@Override
 	public void setTransformation(String mode, String padding) {
@@ -47,7 +44,7 @@ public class RC4 implements SymmetricCipher {
 	}
 
 	// =========================
-	// TẠO KHÓA 
+	// TẠO KHÓA
 	// =========================
 	@Override
 	public SecretKey genKey() throws Exception {
@@ -63,7 +60,7 @@ public class RC4 implements SymmetricCipher {
 	}
 
 	// =========================
-	// IV 
+	// IV
 	// =========================
 	@Override
 	public IvParameterSpec genIV() {
@@ -80,7 +77,7 @@ public class RC4 implements SymmetricCipher {
 	// KHỞI TẠO CIPHER
 	// =========================
 	private Cipher initCipher(int mode) throws Exception {
-		Cipher cipher = Cipher.getInstance(transformation); 
+		Cipher cipher = Cipher.getInstance(transformation);
 		cipher.init(mode, key);
 		return cipher;
 	}
@@ -111,38 +108,20 @@ public class RC4 implements SymmetricCipher {
 	// =========================
 	@Override
 	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		if (encrypt) {
-			try (
-				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
-				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
-			) {
-				HeaderManager.writeHeader(bos, new File(sourceFile).getName());
-				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-				byte[] buffer = new byte[4096];
-				int n;
-				while ((n = bis.read(buffer)) != -1) {
-					byte[] chunk = cipher.update(buffer, 0, n);
-					if (chunk != null) bos.write(chunk);
-				}
-				byte[] finalOut = cipher.doFinal();
-				if (finalOut != null) bos.write(finalOut);
+		// RC4 không có IV, không có header — đọc/ghi thẳng vào destFile
+		try (
+			BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
+			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
+		) {
+			Cipher cipher = initCipher(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE);
+			byte[] buffer = new byte[4096];
+			int n;
+			while ((n = bis.read(buffer)) != -1) {
+				byte[] chunk = cipher.update(buffer, 0, n);
+				if (chunk != null) bos.write(chunk);
 			}
-		} else {
-			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
-				String realDest = HeaderManager.readHeader(bis, destFile);
-				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-				try (BufferedOutputStream out =
-						new BufferedOutputStream(new FileOutputStream(realDest))) {
-					byte[] buffer = new byte[4096];
-					int n;
-					while ((n = bis.read(buffer)) != -1) {
-						byte[] chunk = cipher.update(buffer, 0, n);
-						if (chunk != null) out.write(chunk);
-					}
-					byte[] finalOut = cipher.doFinal();
-					if (finalOut != null) out.write(finalOut);
-				}
-			}
+			byte[] finalOut = cipher.doFinal();
+			if (finalOut != null) bos.write(finalOut);
 		}
 		return true;
 	}

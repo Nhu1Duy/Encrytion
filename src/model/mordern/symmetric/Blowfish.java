@@ -1,14 +1,12 @@
 package model.mordern.symmetric;
 
 import javax.crypto.Cipher;
-import util.HeaderManager;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -51,7 +49,7 @@ public class Blowfish implements SymmetricCipher {
 	}
 
 	// =========================
-	// TẠO KHÓA 
+	// TẠO KHÓA
 	// =========================
 	@Override
 	public SecretKey genKey() throws Exception {
@@ -130,11 +128,8 @@ public class Blowfish implements SymmetricCipher {
 				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
 			) {
 				if (!transformation.contains("ECB")) {
-					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
 					genIV();
 					bos.write(iv.getIV());
-				} else {
-					HeaderManager.writeHeader(bos, new File(sourceFile).getName());
 				}
 				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
 				byte[] buffer = new byte[4096];
@@ -148,8 +143,6 @@ public class Blowfish implements SymmetricCipher {
 			}
 		} else {
 			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
-				String realDest = HeaderManager.readHeader(bis, destFile);
-
 				if (!transformation.contains("ECB")) {
 					byte[] ivBytes = new byte[8];
 					int total = 0;
@@ -162,8 +155,7 @@ public class Blowfish implements SymmetricCipher {
 				}
 
 				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-				try (BufferedOutputStream out =
-						new BufferedOutputStream(new FileOutputStream(realDest))) {
+				try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile))) {
 					byte[] buffer = new byte[4096];
 					int n;
 					while ((n = bis.read(buffer)) != -1) {
