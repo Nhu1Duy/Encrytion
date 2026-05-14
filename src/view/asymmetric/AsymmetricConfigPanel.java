@@ -6,21 +6,16 @@ import java.awt.*;
 
 public class AsymmetricConfigPanel extends JPanel {
 
-	private static final int[]    KEY_SIZES = { 1024, 2048, 4096 };
-	private static final String[] PADDINGS  = {
-		"PKCS1Padding",
-		"OAEPWithSHA-1AndMGF1Padding",
-		"OAEPWithSHA-256AndMGF1Padding",
-		"OAEPWithSHA-384AndMGF1Padding",
-		"OAEPWithSHA-512AndMGF1Padding",
-		"NoPadding"
-	};
+	private static final int[] KEY_SIZES = { 1024, 2048, 4096 };
+	private static final String[] PADDINGS = { "PKCS1Padding", "OAEPWithSHA-1AndMGF1Padding",
+			"OAEPWithSHA-256AndMGF1Padding", "OAEPWithSHA-384AndMGF1Padding", "OAEPWithSHA-512AndMGF1Padding",
+			"NoPadding" };
 
 	private JComboBox<String> keySizeCombo;
 	private JComboBox<String> paddingCombo;
-	private JTextArea         publicKeyArea;
-	private JTextArea         privateKeyArea;
-	private JButton           genKeyPairBtn;
+	private JTextArea publicKeyArea;
+	private JTextArea privateKeyArea;
+	private JButton genKeyPairBtn;
 
 	public AsymmetricConfigPanel() {
 		initUI();
@@ -47,13 +42,13 @@ public class AsymmetricConfigPanel extends JPanel {
 		keySizeCombo = new JComboBox<>(keySizeOptions);
 		keySizeCombo.setSelectedIndex(1); // default 2048
 		configRow.add(label("Key size:"), at(lc, 0));
-		configRow.add(keySizeCombo,       at(fc, 0));
+		configRow.add(keySizeCombo, at(fc, 0));
 
 		// Padding
 		paddingCombo = new JComboBox<>(PADDINGS);
 		paddingCombo.setSelectedIndex(0); // default PKCS1Padding
 		configRow.add(label("Padding:"), at(lc, 1));
-		configRow.add(paddingCombo,       at(fc, 1));
+		configRow.add(paddingCombo, at(fc, 1));
 
 		// Gen button row
 		genKeyPairBtn = new JButton("⚡ Tạo cặp khóa");
@@ -65,7 +60,7 @@ public class AsymmetricConfigPanel extends JPanel {
 		genRow.add(genKeyPairBtn);
 
 		topPanel.add(configRow, BorderLayout.CENTER);
-		topPanel.add(genRow,    BorderLayout.SOUTH);
+		topPanel.add(genRow, BorderLayout.SOUTH);
 
 		// ── Center: key areas ─────────────────────────────────────────────────
 		JPanel pubPanel = new JPanel(new BorderLayout(0, 4));
@@ -85,11 +80,15 @@ public class AsymmetricConfigPanel extends JPanel {
 		privPanel.add(new JScrollPane(privateKeyArea), BorderLayout.CENTER);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, pubPanel, privPanel);
-		splitPane.setDividerLocation(150);
+
 		splitPane.setResizeWeight(0.5);
 
+		SwingUtilities.invokeLater(() -> {
+			splitPane.setDividerLocation(0.5);
+		});
+
 		// ── Assemble ──────────────────────────────────────────────────────────
-		add(topPanel,  BorderLayout.NORTH);
+		add(topPanel, BorderLayout.NORTH);
 		add(splitPane, BorderLayout.CENTER);
 	}
 
@@ -138,7 +137,10 @@ public class AsymmetricConfigPanel extends JPanel {
 		return (String) paddingCombo.getSelectedItem();
 	}
 
-	/** Transformation string ready for Cipher.getInstance(), e.g. "RSA/ECB/PKCS1Padding" */
+	/**
+	 * Transformation string ready for Cipher.getInstance(), e.g.
+	 * "RSA/ECB/PKCS1Padding"
+	 */
 	public String getTransformation() {
 		return "RSA/ECB/" + getSelectedPadding();
 	}

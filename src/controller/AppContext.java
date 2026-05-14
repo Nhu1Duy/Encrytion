@@ -13,6 +13,7 @@ public class AppContext {
 	public static final String MODE_CLASSIC = "Classic";
 	public static final String MODE_SYMMETRIC = "Symmetric";
 	public static final String MODE_ASYMMETRIC = "Asymmetric"; 
+	public static final String MODE_HASH = "Hash";
 	public static final String LANG_VN = "VN";
 	public static final String LANG_EN = "EN";
 
@@ -59,7 +60,9 @@ public class AppContext {
 	public boolean isAsymmetricMode() { 
 		return MODE_ASYMMETRIC.equals(currentMode);
 	}
-
+	public boolean isHashMode() {
+	    return MODE_HASH.equals(currentMode);
+	}
 	public String currentAlphabet() {
 		return isVN() ? Alphabet.VN_ALPHABET_FUL : Alphabet.EN_ALPHABET_FUL;
 	}

@@ -3,6 +3,8 @@ package controller;
 import controller.asymmetric.AsymmetricActionController;
 import controller.asymmetric.AsymmetricFileController;
 import controller.classic.*;
+import controller.hash.HashActionController;
+import controller.hash.HashFileController;
 import controller.symmetric.*;
 import view.MainFrame;
 
@@ -17,7 +19,9 @@ public class AppController {
 	private final SymmetricFileController symmetricFileController;
 	private final AsymmetricActionController asymmetricActionController;
 	private final AsymmetricFileController asymmetricFileController;
-
+	private final HashActionController hashActionController;
+	private final HashFileController   hashFileController;
+	
 	public AppController(MainFrame view) {
 		ctx = new AppContext(view);
 
@@ -36,6 +40,10 @@ public class AppController {
 		// Asymmetric (RSA) 
 		asymmetricActionController = new AsymmetricActionController(ctx);
 		asymmetricFileController = new AsymmetricFileController(ctx);
+	
+		// Hash
+		hashActionController = new HashActionController(ctx);
+		hashFileController   = new HashFileController(ctx, hashActionController);
 	}
 
 	public void bind() {
@@ -46,5 +54,7 @@ public class AppController {
 		symmetricFileController.bind();
 		asymmetricActionController.bind();  
 		asymmetricFileController.bind(); 
+		hashActionController.bind();
+		hashFileController.bind();
 	}
 }

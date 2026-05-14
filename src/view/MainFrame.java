@@ -7,7 +7,8 @@ import view.shared.IoPanel;
 import view.shared.SidePanel;
 import view.symmetric.SymmetricPanel;
 import controller.AppController;
-
+import util.SecurityProvider;
+import view.hash.HashPanel;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
@@ -23,7 +24,7 @@ public class MainFrame {
 	public final ClassicCipherPanel classicPanel;
 	public final SymmetricPanel symmetricPanel;
 	public final AsymmetricPanel asymmetricPanel; 
-
+	public final HashPanel hashPanel;
 	// ── Menu items ──────────────────────────────────────────────────────────
 	// File
 	public final JMenuItem itemImportInput = new JMenuItem("📥 Import Input");
@@ -45,7 +46,8 @@ public class MainFrame {
 
 	// Thuật toán — asymmetric  
 	public final JMenuItem itemAsymmetric = new JMenuItem("Bất Đối Xứng (RSA)");
-
+	
+	public final JMenuItem itemHash = new JMenuItem("Hàm Băm (Hash)");
 	// Ngôn ngữ
 	public final JMenuItem itemVN = new JMenuItem("Tiếng Việt");
 	public final JMenuItem itemEN = new JMenuItem("English");
@@ -59,6 +61,7 @@ public class MainFrame {
 		classicPanel = new ClassicCipherPanel();
 		symmetricPanel = new SymmetricPanel();
 		asymmetricPanel = new AsymmetricPanel(); 
+		hashPanel = new HashPanel();
 		
 		configureFrame();
 		buildMenuBar();
@@ -89,7 +92,8 @@ public class MainFrame {
 	private void registerSideCards() {
 		sidePanel.addCard(classicPanel, "Classic");
 		sidePanel.addCard(symmetricPanel, "Symmetric");
-		sidePanel.addCard(asymmetricPanel, "Asymmetric");  
+		sidePanel.addCard(asymmetricPanel, "Asymmetric"); 
+		sidePanel.addCard(hashPanel, "Hash");
 		sidePanel.showCard("Classic");
 	}
 
@@ -123,6 +127,8 @@ public class MainFrame {
 		algoMenu.add(itemSymmetric);
 		algoMenu.addSeparator(); 
 		algoMenu.add(itemAsymmetric); 
+		algoMenu.addSeparator(); 
+		algoMenu.add(itemHash); 
 
 		JMenu langMenu = new JMenu("Ngôn ngữ ▼");
 		langMenu.add(itemVN);
@@ -157,6 +163,7 @@ public class MainFrame {
 
 	public static void main(String[] args) {
 		MainFrame mf = new MainFrame();
+		SecurityProvider.init();
 		new AppController(mf).bind();
 	}
 }

@@ -16,8 +16,9 @@ public class MenuController {
 	public void bind() {
 		bindClassicMenuItems();
 		bindSymmetricMenuItem();
-		bindAsymmetricMenuItem();  
+		bindAsymmetricMenuItem();
 		bindLanguageMenuItems();
+		bindHashMenuItem();
 	}
 
 	// ── Classic ───────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ public class MenuController {
 		ctx.currentMode = AppContext.MODE_CLASSIC;
 		ctx.classicMethod = cipherName;
 		ctx.view.sidePanel.setFileSectionVisible(false);
+	    ctx.view.sidePanel.setCryptoButtonsVisible(true);
 		view.switchToClassic(cipherName);
 	}
 
@@ -44,19 +46,31 @@ public class MenuController {
 		view.itemSymmetric.addActionListener(e -> {
 			ctx.currentMode = AppContext.MODE_SYMMETRIC;
 			ctx.view.sidePanel.setFileSectionVisible(true);
+		    ctx.view.sidePanel.setCryptoButtonsVisible(true);
 			view.switchToSymmetric();
 		});
 	}
 	// ── Asymmetric (RSA) ──────────────────────────────────────────────────────
-	 
-	private void bindAsymmetricMenuItem() {  // ← ADD THIS
+
+	private void bindAsymmetricMenuItem() { 
 		view.itemAsymmetric.addActionListener(e -> {
 			ctx.currentMode = AppContext.MODE_ASYMMETRIC;
 			ctx.view.sidePanel.setFileSectionVisible(true);
+		    ctx.view.sidePanel.setCryptoButtonsVisible(true);
 			view.switchToAsymmetric();
 		});
 	}
+	// ── Hash ──────────────────────────────────────────────────────
 
+	private void bindHashMenuItem() { 
+		ctx.view.itemHash.addActionListener(e -> {
+		    ctx.currentMode = AppContext.MODE_HASH;
+		    ctx.view.sidePanel.showCard("Hash");
+		    ctx.view.sidePanel.setFileSectionVisible(false); 
+		    ctx.view.sidePanel.setCryptoButtonsVisible(false);
+		    ctx.view.setStatus("Chế độ: Hash");
+		});
+	}
 	// ── Ngôn ngữ ──────────────────────────────────────────────────────────────
 
 	private void bindLanguageMenuItems() {
