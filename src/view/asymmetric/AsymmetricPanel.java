@@ -26,33 +26,25 @@ public class AsymmetricPanel extends JPanel {
 		lblAlgo.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
 		tabBar.add(lblAlgo);
 
-		add(tabBar, BorderLayout.NORTH);
+		add(tabBar,      BorderLayout.NORTH);
 		add(configPanel, BorderLayout.CENTER);
 	}
-	public JButton getGenKeyPairBtn() {
-	    return configPanel.getGenKeyPairBtn();
-	}
-	public AsymmetricConfigPanel getConfigPanel() {
-		return configPanel;
-	}
 
-	public String getPublicKeyText() {
-		return configPanel.getPublicKeyText();
-	}
+	// ── Delegate getters (mirrors SymmetricPanel.getCurrentConfigPanel() pattern) ──
 
-	public void setPublicKeyText(String text) {
-		configPanel.setPublicKeyText(text);
-	}
+	public AsymmetricConfigPanel getConfigPanel() { return configPanel; }
 
-	public String getPrivateKeyText() {
-		return configPanel.getPrivateKeyText();
-	}
+	public JButton getGenKeyPairBtn()  { return configPanel.getGenKeyPairBtn(); }
 
-	public void setPrivateKeyText(String text) {
-		configPanel.setPrivateKeyText(text);
-	}
+	public int    getSelectedKeySize() { return configPanel.getSelectedKeySize(); }
+	public String getSelectedPadding() { return configPanel.getSelectedPadding(); }
+	public String getTransformation()  { return configPanel.getTransformation(); }
 
-	public void clear() {
-		configPanel.clear();
-	}
+	public String getPublicKeyText()         { return configPanel.getPublicKeyText(); }
+	public void   setPublicKeyText(String t) { configPanel.setPublicKeyText(t); }
+
+	public String getPrivateKeyText()         { return configPanel.getPrivateKeyText(); }
+	public void   setPrivateKeyText(String t) { configPanel.setPrivateKeyText(t); }
+
+	public void clear() { configPanel.clear(); }
 }
