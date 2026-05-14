@@ -16,6 +16,7 @@ public class MenuController {
 	public void bind() {
 		bindClassicMenuItems();
 		bindSymmetricMenuItem();
+		bindAsymmetricMenuItem();  
 		bindLanguageMenuItems();
 	}
 
@@ -44,6 +45,15 @@ public class MenuController {
 			ctx.currentMode = AppContext.MODE_SYMMETRIC;
 			ctx.view.sidePanel.setFileSectionVisible(true);
 			view.switchToSymmetric();
+		});
+	}
+	// ── Asymmetric (RSA) ──────────────────────────────────────────────────────
+	 
+	private void bindAsymmetricMenuItem() {  // ← ADD THIS
+		view.itemAsymmetric.addActionListener(e -> {
+			ctx.currentMode = AppContext.MODE_ASYMMETRIC;
+			ctx.view.sidePanel.setFileSectionVisible(true);
+			view.switchToAsymmetric();
 		});
 	}
 

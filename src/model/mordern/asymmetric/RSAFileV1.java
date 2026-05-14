@@ -60,6 +60,18 @@ public class RSAFileV1 {
         X509EncodedKeySpec ks = new X509EncodedKeySpec(decoded);
         return KeyFactory.getInstance("RSA").generatePublic(ks);
     }
+    
+    public static PrivateKey readPrivateKeyFromText(String keyText) throws Exception{
+    	byte[] decoded = decoder.decode(keyText.trim());
+    	PKCS8EncodedKeySpec ks = new PKCS8EncodedKeySpec(decoded);
+    	return KeyFactory.getInstance("RSA").generatePrivate(ks);
+    }
+    
+    public static PublicKey readPublicKeyFromText(String keyText) throws Exception {
+        byte[] decoded = decoder.decode(keyText.trim());
+        X509EncodedKeySpec ks = new X509EncodedKeySpec(decoded);
+        return KeyFactory.getInstance("RSA").generatePublic(ks);
+    }
 
     public static void doEncryptRSAWithAES(PublicKey pub, String inputPath, String outputPath) throws Exception {
         String algorithm = "AES/CBC/PKCS5Padding";

@@ -1,5 +1,7 @@
 package controller;
 
+import controller.asymmetric.AsymmetricActionController;
+import controller.asymmetric.AsymmetricFileController;
 import controller.classic.*;
 import controller.symmetric.*;
 import view.MainFrame;
@@ -13,6 +15,8 @@ public class AppController {
 	private final SymmetricKeyValidator symKeyValidator;
 	private final SymmetricActionController symmetricActionController;
 	private final SymmetricFileController symmetricFileController;
+	private final AsymmetricActionController asymmetricActionController;
+	private final AsymmetricFileController asymmetricFileController;
 
 	public AppController(MainFrame view) {
 		ctx = new AppContext(view);
@@ -28,6 +32,10 @@ public class AppController {
 		symKeyValidator = new SymmetricKeyValidator(ctx);
 		symmetricActionController = new SymmetricActionController(ctx, symKeyValidator);
 		symmetricFileController = new SymmetricFileController(ctx, symKeyValidator);
+		
+		// Asymmetric (RSA) 
+		asymmetricActionController = new AsymmetricActionController(ctx);
+		asymmetricFileController = new AsymmetricFileController(ctx);
 	}
 
 	public void bind() {
@@ -36,5 +44,7 @@ public class AppController {
 		classicFileController.bind();
 		symmetricActionController.bind();
 		symmetricFileController.bind();
+		asymmetricActionController.bind();  
+		asymmetricFileController.bind(); 
 	}
 }

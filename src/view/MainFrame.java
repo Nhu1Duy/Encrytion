@@ -1,5 +1,6 @@
 package view;
 
+import view.asymmetric.AsymmetricPanel;
 import view.classic.ClassicCipherPanel;
 import view.shared.HeaderPanel;
 import view.shared.IoPanel;
@@ -21,6 +22,7 @@ public class MainFrame {
 	public final IoPanel ioPanel;
 	public final ClassicCipherPanel classicPanel;
 	public final SymmetricPanel symmetricPanel;
+	public final AsymmetricPanel asymmetricPanel; 
 
 	// ── Menu items ──────────────────────────────────────────────────────────
 	// File
@@ -41,6 +43,9 @@ public class MainFrame {
 	// Thuật toán — symmetric
 	public final JMenuItem itemSymmetric = new JMenuItem("Đối Xứng Hiện Đại (Symmetric)");
 
+	// Thuật toán — asymmetric  
+	public final JMenuItem itemAsymmetric = new JMenuItem("Bất Đối Xứng (RSA)");
+
 	// Ngôn ngữ
 	public final JMenuItem itemVN = new JMenuItem("Tiếng Việt");
 	public final JMenuItem itemEN = new JMenuItem("English");
@@ -53,7 +58,8 @@ public class MainFrame {
 		ioPanel = new IoPanel();
 		classicPanel = new ClassicCipherPanel();
 		symmetricPanel = new SymmetricPanel();
-
+		asymmetricPanel = new AsymmetricPanel(); 
+		
 		configureFrame();
 		buildMenuBar();
 		registerSideCards();
@@ -83,6 +89,7 @@ public class MainFrame {
 	private void registerSideCards() {
 		sidePanel.addCard(classicPanel, "Classic");
 		sidePanel.addCard(symmetricPanel, "Symmetric");
+		sidePanel.addCard(asymmetricPanel, "Asymmetric");  
 		sidePanel.showCard("Classic");
 	}
 
@@ -114,6 +121,8 @@ public class MainFrame {
 		algoMenu.add(classicSubMenu);
 		algoMenu.addSeparator();
 		algoMenu.add(itemSymmetric);
+		algoMenu.addSeparator(); 
+		algoMenu.add(itemAsymmetric); 
 
 		JMenu langMenu = new JMenu("Ngôn ngữ ▼");
 		langMenu.add(itemVN);
@@ -136,6 +145,10 @@ public class MainFrame {
 	public void switchToSymmetric() {
 	    sidePanel.showCard("Symmetric");
 	    setStatus("Thuật toán: Đối xứng hiện đại");
+	}
+	public void switchToAsymmetric() { 
+	    sidePanel.showCard("Asymmetric");
+	    setStatus("Thuật toán: RSA (Bất đối xứng)");
 	}
 
 	public void setStatus(String text) {

@@ -12,6 +12,7 @@ public class AppContext {
 
 	public static final String MODE_CLASSIC = "Classic";
 	public static final String MODE_SYMMETRIC = "Symmetric";
+	public static final String MODE_ASYMMETRIC = "Asymmetric"; 
 	public static final String LANG_VN = "VN";
 	public static final String LANG_EN = "EN";
 
@@ -53,6 +54,10 @@ public class AppContext {
 
 	public boolean isSymmetricMode() {
 		return MODE_SYMMETRIC.equals(currentMode);
+	}
+
+	public boolean isAsymmetricMode() { 
+		return MODE_ASYMMETRIC.equals(currentMode);
 	}
 
 	public String currentAlphabet() {
