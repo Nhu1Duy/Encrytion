@@ -72,7 +72,6 @@ public class MainFrame {
 				frame.setIconImage(new ImageIcon(res).getImage());
 			}
 		} catch (Exception e) {
-			// icon không tìm được, sử dụng mặc định
 		}
 		
 		frame.add(headerPanel, BorderLayout.NORTH);
@@ -136,24 +135,20 @@ public class MainFrame {
 	}
 	
 	public void switchToClassic(String cipherName) {
-		sidePanel.showCard("Classic " + cipherName);
-		classicPanel.showCipher(cipherName);
-		setStatus("Thuật toán: " + cipherName);
+	    sidePanel.showCard("Classic"); 
+	    classicPanel.showCipher(cipherName);
 	}
 	
 	public void switchToSymmetric() {
 		sidePanel.showCard("Symmetric");
-		setStatus("Thuật toán: Đối xứng hiện đại");
 	}
 	
 	public void switchToAsymmetric() {
 		sidePanel.showCard("Asymmetric");
-		setStatus("Thuật toán: RSA (Bất đối xứng)");
 	}
 	
 	public void switchToHash() {
 		sidePanel.showCard("Hash");
-		setStatus("Thuật toán: Hàm Băm");
 	}
 	
 	public void setStatus(String text) {

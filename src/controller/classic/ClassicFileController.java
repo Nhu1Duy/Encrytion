@@ -9,14 +9,15 @@ import javax.swing.*;
 
 public class ClassicFileController {
 
+	private static final String HILL_MATRIX_PREFIX   = "matrix=";
+	private static final String HILL_ORIG_LEN_PREFIX = "origLen=";
+
 	private final AppContext ctx;
 	private final ClassicCipherPanel classicView;
-	private final HillKeyParser hillKeyParser;
 
-	public ClassicFileController(AppContext ctx, HillKeyParser hillKeyParser) {
+	public ClassicFileController(AppContext ctx) {
 		this.ctx = ctx;
 		this.classicView = ctx.view.classicPanel;
-		this.hillKeyParser = hillKeyParser;
 	}
 
 	public void bind() {
@@ -60,7 +61,7 @@ public class ClassicFileController {
 	private void importKeyToPanel(String raw) {
 		try {
 			if (ClassicCipherPanel.HILL.equals(ctx.classicMethod)) {
-				hillKeyParser.importHillKey(raw);
+				importHillKey(raw);
 				return;
 			}
 			KeyPanel kp = classicView.getKeyPanel(ctx.classicMethod);
@@ -71,6 +72,69 @@ public class ClassicFileController {
 		} catch (Exception ex) {
 			ctx.showError("Khong the nap khoa: " + ex.getMessage());
 		}
+	}
+
+	private void importHillKey(String raw) throws Exception {
+		String matrixStr = null;
+		int origLen      = -1;
+		for (String line : raw.split("\\r?\\n")) {
+			line = line.trim();
+			if (line.startsWith(HILL_MATRIX_PREFIX)) {
+				matrixStr = line.substring(HILL_MATRIX_PREFIX.length()).trim();
+			} else if (line.startsWith(HILL_ORIG_LEN_PREFIX)) {
+				origLen = Integer.parseInt(line.substring(HILL_ORIG_LEN_PREFIX.length()).trim());
+			} else if (!line.isEmpty() && matrixStr == null) {
+				matrixStr = line;
+			}
+		}
+		if (matrixStr == null || matrixStr.isBlank())
+			throw new Exception("File khong chua du lieu ma tran hop le!");
+
+		ctx.hillKeyMatrix   = parseHillMatrix(matrixStr);
+		ctx.hillOriginalLen = origLen;
+		classicView.getHillPanel().setKeyDisplay(matrixStr);
+
+		String msg = "Da nap khoa Hill thanh cong."
+				+ (origLen >= 0
+					? "\n(origLen = " + origLen + ")"
+					: "\n(origLen chua duoc luu — can ma hoa truoc khi giai ma)");
+		JOptionPane.showMessageDialog(ctx.view.frame, msg, "Import Key", JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	private int[][] parseHillMatrix(String key) throws Exception {
+		try {
+			String[] parts = key.split(";", 2);
+			int n;
+			int[] vals;
+			if (parts.length == 2) {
+				n    = Integer.parseInt(parts[0].trim());
+				vals = parseTokens(parts[1].trim().split("[,\\s]+"));
+			} else {
+				String[] tokens = key.trim().split("[,\\s]+");
+				n = (int) Math.round(Math.sqrt(tokens.length));
+				if (n * n != tokens.length)
+					throw new Exception("Khong xac dinh duoc kich thuoc ma tran tu "
+							+ tokens.length + " phan tu!");
+				vals = parseTokens(tokens);
+			}
+			if (vals.length != n * n)
+				throw new Exception("So phan tu ma tran khong khop: can " + n * n
+						+ ", co " + vals.length + "!");
+			int[][] matrix = new int[n][n];
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < n; j++)
+					matrix[i][j] = vals[i * n + j];
+			return matrix;
+		} catch (NumberFormatException ex) {
+			throw new Exception("Du lieu ma tran chua ky tu khong hop le!");
+		}
+	}
+
+	private int[] parseTokens(String[] tokens) {
+		int[] vals = new int[tokens.length];
+		for (int i = 0; i < tokens.length; i++)
+			vals[i] = Integer.parseInt(tokens[i].trim());
+		return vals;
 	}
 
 	private void bindSaveKey() {
@@ -91,9 +155,9 @@ public class ClassicFileController {
 			if (ctx.hillKeyMatrix == null)
 				return null;
 			StringBuilder sb = new StringBuilder();
-			sb.append(HillKeyParser.HILL_MATRIX_PREFIX).append(ctx.hillCipher.matrixToKey(ctx.hillKeyMatrix));
+			sb.append(HILL_MATRIX_PREFIX).append(ctx.hillCipher.matrixToKey(ctx.hillKeyMatrix));
 			if (ctx.hillOriginalLen >= 0)
-				sb.append("\n").append(HillKeyParser.HILL_ORIG_LEN_PREFIX).append(ctx.hillOriginalLen);
+				sb.append("\n").append(HILL_ORIG_LEN_PREFIX).append(ctx.hillOriginalLen);
 			return sb.toString();
 		}
 		KeyPanel kp = classicView.getKeyPanel(ctx.classicMethod);
@@ -114,15 +178,15 @@ public class ClassicFileController {
 
 	private void clearCurrentKey() {
 		switch (ctx.classicMethod) {
-		case ClassicCipherPanel.CAESAR -> classicView.getCaesarPanel().setKeyField("");
+		case ClassicCipherPanel.CAESAR      -> classicView.getCaesarPanel().setKeyField("");
 		case ClassicCipherPanel.SUBSTITUTION -> classicView.getSubstitutionPanel().getKeyArea().setText("");
 		case ClassicCipherPanel.AFFINE -> {
 			classicView.getAffinePanel().getKeyA().setText("");
 			classicView.getAffinePanel().getKeyB().setText("");
 		}
-		case ClassicCipherPanel.VIGENERE -> classicView.getVigenerePanel().getKeyField().setText("");
+		case ClassicCipherPanel.VIGENERE    -> classicView.getVigenerePanel().getKeyField().setText("");
 		case ClassicCipherPanel.HILL -> {
-			ctx.hillKeyMatrix = null;
+			ctx.hillKeyMatrix   = null;
 			ctx.hillOriginalLen = -1;
 			classicView.getHillPanel().setKeyDisplay("(Nhan Gen Key de tao khoa)");
 		}

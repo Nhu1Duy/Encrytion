@@ -1,10 +1,10 @@
 package model.clasic;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
-/**
- * Hill Cipher – mã hoá theo khối dùng phép nhân ma trận mod |alphabet|.
- */
 public class HillCipher implements ClassicCipher {
 
     private static final String EN_ALPHABET = Tool.Alphabet.EN_ALPHABET_FUL;
@@ -22,15 +22,13 @@ public class HillCipher implements ClassicCipher {
             for (int i = 0; i < n; i++)
                 for (int j = 0; j < n; j++)
                     key[i][j] = rng.nextInt(mod);
-            int det = ((det(key, n) % mod) + mod) % mod;
+            int det = (int) (((detLong(key, n) % mod) + mod) % mod);
             if (det != 0 && gcd(det, mod) == 1) return key;
         }
     }
 
 
-    public String matrixToKey(int[][] m) {
-        return matrixToKey(m, -1);
-    }
+    public String matrixToKey(int[][] m) { return matrixToKey(m, -1); }
 
     public String matrixToKey(int[][] m, int originalLength) {
         int n = m.length;
@@ -45,26 +43,16 @@ public class HillCipher implements ClassicCipher {
         return sb.toString();
     }
 
-    @Override
-    public String encryptEN(String plainText, String key) {
-        return encryptEN(plainText, parseMatrix(key));
-    }
+    @Override public String encryptEN(String plainText, String key) { return encryptEN(plainText, parseMatrix(key)); }
+    @Override public String encryptVN(String plainText, String key) { return encryptVN(plainText, parseMatrix(key)); }
 
     @Override
     public String decryptEN(String cipherText, String key) {
-        int len = parseOriginalLength(key, cipherText);
-        return decryptEN(cipherText, parseMatrix(key), len);
+        return decryptEN(cipherText, parseMatrix(key), parseOriginalLength(key));
     }
-
-    @Override
-    public String encryptVN(String plainText, String key) {
-        return encryptVN(plainText, parseMatrix(key));
-    }
-
     @Override
     public String decryptVN(String cipherText, String key) {
-        int len = parseOriginalLength(key, cipherText);
-        return decryptVN(cipherText, parseMatrix(key), len);
+        return decryptVN(cipherText, parseMatrix(key), parseOriginalLength(key));
     }
 
 
@@ -80,26 +68,23 @@ public class HillCipher implements ClassicCipher {
 
     public String encrypt(String plainText, int[][] key, String alphabet) {
         validateKey(key, alphabet);
-        return process(plainText, key, alphabet);
+        return process(plainText, key, alphabet, -1);
     }
 
-    public String decrypt(String cipherText, int[][] key, String alphabet, int originalLength) {
+    public String decrypt(String cipherText, int[][] key, String alphabet, int originalAlphaCount) {
         validateKey(key, alphabet);
-        String raw = process(cipherText, invertMatrix(key, alphabet), alphabet);
-        return trimToLength(raw, originalLength);
+        return process(cipherText, invertMatrix(key, alphabet), alphabet, originalAlphaCount);
     }
+    
+    private String process(String text, int[][] matrix, String alphabet, int origAlphaCount) {
+        int      n        = matrix.length;
+        int      mod      = codePointCount(alphabet);
+        String[] textCps  = codePoints(text);
+        String[] alphaCps = codePoints(alphabet);
 
-
-
-    private String process(String text, int[][] matrix, String alphabet) {
-        int     n          = matrix.length;
-        int     mod        = codePointCount(alphabet);
-        String[] textCps   = codePoints(text);
-        String[] alphaCps  = codePoints(alphabet);
-
-        int[]   posMap  = new int[textCps.length];
-        int[]   indices = new int[textCps.length];
-        int     count   = 0;
+        int[] posMap  = new int[textCps.length];
+        int[] indices = new int[textCps.length];
+        int   count   = 0;
 
         for (int i = 0; i < textCps.length; i++) {
             int pos = indexOf(alphaCps, textCps[i]);
@@ -110,46 +95,63 @@ public class HillCipher implements ClassicCipher {
             }
         }
 
-        int padded = count + (n - count % n) % n;
-        int[] padded_indices = new int[padded];
-        System.arraycopy(indices, 0, padded_indices, 0, count);
-        int padIdx = indexOf(alphaCps, "X");
-        if (padIdx < 0) padIdx = 0;
-        for (int i = count; i < padded; i++) padded_indices[i] = padIdx;
+        int   padded     = count + (n - count % n) % n;
+        int[] paddedIdx  = new int[padded];
+        System.arraycopy(indices, 0, paddedIdx, 0, count);
+        int padChar = indexOf(alphaCps, "X");
+        if (padChar < 0) padChar = 0;
+        for (int i = count; i < padded; i++) paddedIdx[i] = padChar;
 
-        int[] encIdx = new int[padded];
+        int[] outIdx = new int[padded];
         int[] block  = new int[n];
         for (int i = 0; i < padded; i += n) {
-            System.arraycopy(padded_indices, i, block, 0, n);
-            int[] result = mulMV(matrix, block, mod);
-            System.arraycopy(result, 0, encIdx, i, n);
+            System.arraycopy(paddedIdx, i, block, 0, n);
+            int[] result = mulVM(block, matrix, mod);
+            System.arraycopy(result, 0, outIdx, i, n);
         }
+        int limit = (origAlphaCount >= 0 && origAlphaCount <= count) ? origAlphaCount : count;
 
         String[] output = textCps.clone();
-        for (int i = 0; i < count; i++)
-            output[posMap[i]] = alphaCps[encIdx[i]];
+        for (int i = 0; i < limit; i++)
+            output[posMap[i]] = alphaCps[outIdx[i]];
+
+        List<String> alphaList = Arrays.asList(alphaCps);
+        if (origAlphaCount >= 0 && limit < count) {
+            int cutPos = posMap[limit]; 
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < cutPos; i++) {
+                sb.append(output[i]);
+            }
+            for (int i = cutPos; i < textCps.length; i++) {
+                if (!alphaList.contains(textCps[i]))
+                    sb.append(textCps[i]);
+            }
+            return sb.toString();
+        }
 
         StringBuilder sb = new StringBuilder();
         for (String s : output) sb.append(s);
         return sb.toString();
     }
 
-    private int[] mulMV(int[][] m, int[] v, int mod) {
+
+    /** y = x * M  (row-vector nhân bên trái) */
+    private int[] mulVM(int[] v, int[][] m, int mod) {
         int n = m.length;
         int[] r = new int[n];
-        for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
             long s = 0;
-            for (int j = 0; j < n; j++) s += (long) m[i][j] * v[j];
-            r[i] = (int) ((s % mod + mod) % mod);
+            for (int i = 0; i < n; i++) s += (long) v[i] * m[i][j];
+            r[j] = (int) ((s % mod + mod) % mod);
         }
         return r;
     }
 
     private int[][] invertMatrix(int[][] m, String alphabet) {
-        int n   = m.length;
-        int mod = codePointCount(alphabet);
-        int d   = ((det(m, n) % mod) + mod) % mod;
-        int dInv = modInverse(d, mod);
+        int  n    = m.length;
+        int  mod  = codePointCount(alphabet);
+        long d    = ((detLong(m, n) % mod) + mod) % mod;
+        int  dInv = modInverse((int) d, mod);
 
         int[][] adj = adjugate(m, n, mod);
         int[][] inv = new int[n][n];
@@ -163,8 +165,9 @@ public class HillCipher implements ClassicCipher {
         int[][] cof = new int[n][n];
         for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++) {
-                int sign = ((i + j) % 2 == 0) ? 1 : -1;
-                cof[i][j] = ((sign * det(minor(m, i, j, n), n - 1) % mod) + mod) % mod;
+                int  sign     = ((i + j) % 2 == 0) ? 1 : -1;
+                long minorDet = detLong(minor(m, i, j, n), n - 1);
+                cof[i][j] = (int) (((sign * minorDet) % mod + mod) % mod);
             }
         int[][] adj = new int[n][n];
         for (int i = 0; i < n; i++)
@@ -188,16 +191,34 @@ public class HillCipher implements ClassicCipher {
         return mn;
     }
 
-    private int det(int[][] m, int n) {
+    private long detLong(int[][] m, int n) {
+        if (n == 0) return 1;
         if (n == 1) return m[0][0];
-        if (n == 2) return m[0][0] * m[1][1] - m[0][1] * m[1][0];
-        int d = 0;
+        if (n == 2) return (long) m[0][0] * m[1][1] - (long) m[0][1] * m[1][0];
+        long d = 0;
         for (int col = 0; col < n; col++) {
             int sign = (col % 2 == 0) ? 1 : -1;
-            d += sign * m[0][col] * det(minor(m, 0, col, n), n - 1);
+            d += sign * (long) m[0][col] * detLong(minor(m, 0, col, n), n - 1);
         }
         return d;
     }
+
+    private int det(int[][] m, int n) { return (int) detLong(m, n); }
+
+    private int modInverse(int a, int mod) {
+        a = ((a % mod) + mod) % mod;
+        int m0 = mod, x0 = 0, x1 = 1;
+        if (mod == 1) return 0;
+        int aa = a, mm = mod;
+        while (aa > 1) {
+            int q = aa / mm, t = mm;
+            mm = aa % mm; aa = t; t = x0;
+            x0 = x1 - q * x0; x1 = t;
+        }
+        return x1 < 0 ? x1 + m0 : x1;
+    }
+
+    private int gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }
 
 
     private String[] codePoints(String s) {
@@ -206,9 +227,7 @@ public class HillCipher implements ClassicCipher {
                 .toArray(String[]::new);
     }
 
-    private int codePointCount(String s) {
-        return (int) s.codePoints().count();
-    }
+    private int codePointCount(String s) { return (int) s.codePoints().count(); }
 
     private int indexOf(String[] arr, String ch) {
         for (int i = 0; i < arr.length; i++)
@@ -216,25 +235,11 @@ public class HillCipher implements ClassicCipher {
         return -1;
     }
 
-    private String trimToLength(String text, int len) {
-        return text.codePoints().limit(len)
-                   .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                   .toString();
-    }
-
-    private int gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }
-
-    private int modInverse(int a, int mod) {
-        a = ((a % mod) + mod) % mod;
-        for (int x = 1; x < mod; x++)
-            if ((long) a * x % mod == 1) return x;
-        throw new IllegalArgumentException("Không có nghịch đảo mod " + mod + " của " + a);
-    }
 
     private void validateKey(int[][] m, String alphabet) {
-        int n   = m.length;
-        int mod = codePointCount(alphabet);
-        int d   = ((det(m, n) % mod) + mod) % mod;
+        int  n   = m.length;
+        int  mod = codePointCount(alphabet);
+        int  d   = (int) (((detLong(m, n) % mod) + mod) % mod);
         if (d == 0 || gcd(d, mod) != 1)
             throw new IllegalArgumentException(
                 "Ma trận khóa không hợp lệ! det=" + d + " không có nghịch đảo mod " + mod);
@@ -253,10 +258,8 @@ public class HillCipher implements ClassicCipher {
         return m;
     }
 
-    private int parseOriginalLength(String key, String fallback) {
+    private int parseOriginalLength(String key) {
         int sep = key.indexOf('|');
-        if (sep >= 0) return Integer.parseInt(key.substring(sep + 1).trim());
-        return codePointCount(fallback);
+        return sep >= 0 ? Integer.parseInt(key.substring(sep + 1).trim()) : -1;
     }
-
 }

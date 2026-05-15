@@ -24,8 +24,11 @@ public class AsymmetricFileController {
 	}
 
 	private void browseInput() {
-		File file = FileManager.chooseOpenFile(ctx.view.frame, "All files", new String[]{});
-		if (file == null) return;
+		if (!ctx.isAsymmetricMode())
+			return;
+		File file = FileManager.chooseOpenFile(ctx.view.frame, "All files", new String[] {});
+		if (file == null)
+			return;
 
 		ctx.view.sidePanel.getInputPathField().setText(file.getAbsolutePath());
 		String outputPath = FileManager.buildOutputPath(file.getParent(), file.getAbsolutePath());
@@ -33,11 +36,14 @@ public class AsymmetricFileController {
 	}
 
 	private void browseOutput() {
+		if (!ctx.isAsymmetricMode())
+			return;
 		String currentOut = ctx.view.sidePanel.getOutputPathField().getText().trim();
 		File initialDir = currentOut.isEmpty() ? null : new File(currentOut).getParentFile();
-		
+
 		File selectedDir = FileManager.chooseDirectory(ctx.view.frame, initialDir);
-		if (selectedDir == null) return;
+		if (selectedDir == null)
+			return;
 
 		String inputPath = ctx.view.sidePanel.getInputPathField().getText().trim();
 		String outputPath = FileManager.buildOutputPath(selectedDir.getAbsolutePath(), inputPath);
@@ -45,6 +51,9 @@ public class AsymmetricFileController {
 	}
 
 	private void handleFile(boolean encrypt) {
+
+		if (!ctx.isAsymmetricMode())
+			return;
 		String src = ctx.view.sidePanel.getInputPathField().getText().trim();
 		String dst = ctx.view.sidePanel.getOutputPathField().getText().trim();
 
@@ -73,6 +82,9 @@ public class AsymmetricFileController {
 	}
 
 	private void importKey() {
+
+		if (!ctx.isAsymmetricMode())
+			return;
 		String keyText = FileManager.importKey(ctx.view.frame);
 		if (keyText == null || keyText.isBlank())
 			return;
@@ -87,7 +99,10 @@ public class AsymmetricFileController {
 	}
 
 	private void saveKey() {
-		boolean encrypt = true; 
+
+		if (!ctx.isAsymmetricMode())
+			return;
+		boolean encrypt = true;
 		String keyText = encrypt ? ctx.view.asymmetricPanel.getPublicKeyText()
 				: ctx.view.asymmetricPanel.getPrivateKeyText();
 

@@ -60,14 +60,14 @@ public class AsymmetricActionController {
 	}
 
 	private void bindEncryptDecrypt() {
-		ctx.view.sidePanel.getEncryptBtn().addActionListener(e -> {
-			if (!ctx.isSymmetricMode())
-				handleCrypto(true);
-		});
-		ctx.view.sidePanel.getDecryptBtn().addActionListener(e -> {
-			if (!ctx.isSymmetricMode())
-				handleCrypto(false);
-		});
+	    ctx.view.sidePanel.getEncryptBtn().addActionListener(e -> {
+	        if (ctx.isAsymmetricMode())  
+	            handleCrypto(true);
+	    });
+	    ctx.view.sidePanel.getDecryptBtn().addActionListener(e -> {
+	        if (ctx.isAsymmetricMode())   
+	            handleCrypto(false);
+	    });
 	}
 	private void handleCrypto(boolean encrypt) {
         String input = ctx.view.ioPanel.getInputArea().getText().trim();

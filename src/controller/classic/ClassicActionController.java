@@ -116,7 +116,15 @@ public class ClassicActionController {
 			throw new Exception("Vui lòng nhấn 'Gen Key' để tạo khóa Hill trước!");
 		if (enc) {
 			String alpha = ctx.currentAlphabet();
-			ctx.hillOriginalLen = (int) input.chars().filter(c -> alpha.contains(String.valueOf((char) c))).count();
+			String[] alphaCps = alpha.codePoints()
+				    .mapToObj(cp -> new String(Character.toChars(cp)))
+				    .toArray(String[]::new);
+				String[] inputCps = input.codePoints()
+				    .mapToObj(cp -> new String(Character.toChars(cp)))
+				    .toArray(String[]::new);
+				ctx.hillOriginalLen = (int) java.util.Arrays.stream(inputCps)
+				    .filter(cp -> java.util.Arrays.asList(alphaCps).contains(cp))
+				    .count();
 			return ctx.isVN() ? ctx.hillCipher.encryptVN(input, ctx.hillKeyMatrix)
 					: ctx.hillCipher.encryptEN(input, ctx.hillKeyMatrix);
 		} else {

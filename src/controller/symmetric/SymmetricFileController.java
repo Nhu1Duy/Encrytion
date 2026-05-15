@@ -26,6 +26,8 @@ public class SymmetricFileController {
 	}
 
 	private void browseInput() {
+		if (!ctx.isSymmetricMode())
+			return;
 		File file = FileManager.chooseOpenFile(ctx.view.frame, "All files", new String[] {});
 		if (file == null)
 			return;
@@ -37,6 +39,8 @@ public class SymmetricFileController {
 	}
 
 	private void browseOutput() {
+		if (!ctx.isSymmetricMode())
+			return;
 		String currentOut = ctx.view.sidePanel.getOutputPathField().getText().trim();
 		File initialDir = currentOut.isEmpty() ? null : new File(currentOut).getParentFile();
 
@@ -50,6 +54,8 @@ public class SymmetricFileController {
 	}
 
 	private void handleFile(boolean encrypt) {
+		if (!ctx.isSymmetricMode())
+			return;
 		String src = ctx.view.sidePanel.getInputPathField().getText().trim();
 		String dst = ctx.view.sidePanel.getOutputPathField().getText().trim();
 
@@ -79,8 +85,9 @@ public class SymmetricFileController {
 		}
 	}
 
-
 	private void importKey() {
+		if (!ctx.isSymmetricMode())
+			return;
 		String keyText = FileManager.importKey(ctx.view.frame);
 		if (keyText == null || keyText.isBlank())
 			return;
@@ -88,8 +95,9 @@ public class SymmetricFileController {
 		ctx.view.symmetricPanel.getCurrentConfigPanel().setKeyText(keyText.trim());
 	}
 
-
 	private void saveKey() {
+		if (!ctx.isSymmetricMode())
+			return;
 		String keyText = ctx.view.symmetricPanel.getCurrentConfigPanel().getKeyText();
 		if (keyText.isBlank()) {
 			ctx.showError("Chưa có key để lưu. Vui lòng tạo hoặc nhập key trước.");

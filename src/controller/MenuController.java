@@ -68,7 +68,6 @@ public class MenuController {
 		    ctx.view.sidePanel.showCard("Hash");
 		    ctx.view.sidePanel.setFileSectionVisible(false); 
 		    ctx.view.sidePanel.setCryptoButtonsVisible(false);
-		    ctx.view.setStatus("Chế độ: Hash");
 		});
 	}
 	// ── Ngôn ngữ ──────────────────────────────────────────────────────────────

@@ -20,28 +20,23 @@ public class AppController {
 	private final AsymmetricActionController asymmetricActionController;
 	private final AsymmetricFileController asymmetricFileController;
 	private final HashActionController hashActionController;
-	private final HashFileController   hashFileController;
-	
+	private final HashFileController hashFileController;
+
 	public AppController(MainFrame view) {
 		ctx = new AppContext(view);
 
-		// Classic
 		ClassicKeyValidator classicKeyValidator = new ClassicKeyValidator(ctx);
-		HillKeyParser hillKeyParser = new HillKeyParser(ctx);
-		menuController = new MenuController(ctx);
-		classicActionController = new ClassicActionController(ctx, classicKeyValidator);
-		classicFileController = new ClassicFileController(ctx, hillKeyParser);
+		menuController           = new MenuController(ctx);
+		classicActionController  = new ClassicActionController(ctx, classicKeyValidator);
+		classicFileController    = new ClassicFileController(ctx);  
 
-		// Symmetric
-		symKeyValidator = new SymmetricKeyValidator(ctx);
+		symKeyValidator          = new SymmetricKeyValidator(ctx);
 		symmetricActionController = new SymmetricActionController(ctx, symKeyValidator);
-		symmetricFileController = new SymmetricFileController(ctx, symKeyValidator);
-		
-		// Asymmetric (RSA) 
+		symmetricFileController  = new SymmetricFileController(ctx, symKeyValidator);
+
 		asymmetricActionController = new AsymmetricActionController(ctx);
-		asymmetricFileController = new AsymmetricFileController(ctx);
-	
-		// Hash
+		asymmetricFileController   = new AsymmetricFileController(ctx);
+
 		hashActionController = new HashActionController(ctx);
 		hashFileController   = new HashFileController(ctx, hashActionController);
 	}
@@ -52,8 +47,8 @@ public class AppController {
 		classicFileController.bind();
 		symmetricActionController.bind();
 		symmetricFileController.bind();
-		asymmetricActionController.bind();  
-		asymmetricFileController.bind(); 
+		asymmetricActionController.bind();
+		asymmetricFileController.bind();
 		hashActionController.bind();
 		hashFileController.bind();
 	}
