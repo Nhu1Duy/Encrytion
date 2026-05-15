@@ -3,7 +3,11 @@ package view.shared;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+
+import util.FormatButton;
+
 import java.awt.*;
+import java.text.Format;
 
 public class SidePanel extends JPanel {
 
@@ -30,8 +34,8 @@ public class SidePanel extends JPanel {
 
 		JPanel pnlTextActions = new JPanel(new GridLayout(1, 2, 10, 0));
 		pnlTextActions.setBorder(new EmptyBorder(0, 0, 6, 0));
-		formatButton(btnTextEnc, new Color(0, 123, 255));
-		formatButton(btnTextDec, new Color(80, 80, 80));
+		FormatButton.formatButton(btnTextEnc, new Color(0, 123, 255));
+		FormatButton.formatButton(btnTextDec, new Color(80, 80, 80));
 		pnlTextActions.add(btnTextEnc);
 		pnlTextActions.add(btnTextDec);
 
@@ -58,8 +62,8 @@ public class SidePanel extends JPanel {
 		sectionFile.add(Box.createVerticalStrut(10));
 
 		JPanel pnlFileBtns = new JPanel(new GridLayout(1, 2, 8, 0));
-		formatButton(btnFileEnc, new Color(0, 153, 76));
-		formatButton(btnFileDec, new Color(153, 76, 0));
+		FormatButton.formatButton(btnFileEnc, new Color(0, 153, 76));
+		FormatButton.formatButton(btnFileDec, new Color(153, 76, 0));
 		pnlFileBtns.add(btnFileEnc);
 		pnlFileBtns.add(btnFileDec);
 
@@ -101,12 +105,6 @@ public class SidePanel extends JPanel {
 		btnTextDec.setVisible(visible);
 		revalidate();
 		repaint();
-	}
-
-	private void formatButton(JButton b, Color bg) {
-		b.setBackground(bg);
-		b.setForeground(Color.WHITE);
-		b.setFocusPainted(false);
 	}
 
 	public JButton getEncryptBtn() {

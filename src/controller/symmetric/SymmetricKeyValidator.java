@@ -3,13 +3,11 @@ package controller.symmetric;
 import controller.AppContext;
 import model.mordern.symmetric.*;
 import view.symmetric.SymmetricConfigPanel;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
 public class SymmetricKeyValidator {
-
     private final AppContext app; 
 
     public SymmetricKeyValidator(AppContext app) {
@@ -23,7 +21,6 @@ public class SymmetricKeyValidator {
             app.showError("Key missing! Please generate or enter a key first.");
             return null;
         }
-
         try {
             byte[] rawBytes = Base64.getDecoder().decode(inputKey.trim());
             String algorithm = app.currentSymAlgoName();
@@ -36,6 +33,7 @@ public class SymmetricKeyValidator {
         }
     }
 
+ 
     public boolean validateInput(String data, boolean modeEncrypt) {
         if (data == null || data.trim().equals("")) {
             if (modeEncrypt == true) {
@@ -48,6 +46,7 @@ public class SymmetricKeyValidator {
         return true;
     }
 
+  
     public String generateKeyBase64(SymmetricConfigPanel pnl,
                                     SymmetricCipher model,
                                     boolean checkSize) {
@@ -56,7 +55,6 @@ public class SymmetricKeyValidator {
                 int bitLength = pnl.getSelectedKeySize();
                 setupKeyLength(model, bitLength);
             }
-
             SecretKey keyResult = model.genKey();
             byte[] encodedKey = keyResult.getEncoded();
             
@@ -67,6 +65,7 @@ public class SymmetricKeyValidator {
         }
     }
 
+  
     private void setupKeyLength(SymmetricCipher cipher, int size) {
         if (cipher instanceof AES) {
             AES temp = (AES) cipher;
@@ -78,6 +77,14 @@ public class SymmetricKeyValidator {
         } 
         else if (cipher instanceof RC4) {
             RC4 temp = (RC4) cipher;
+            temp.setKeySize(size);
+        }
+        else if (cipher instanceof Twofish) {
+            Twofish temp = (Twofish) cipher;
+            temp.setKeySize(size);
+        }
+        else if (cipher instanceof Serpent) {
+            Serpent temp = (Serpent) cipher;
             temp.setKeySize(size);
         }
     }

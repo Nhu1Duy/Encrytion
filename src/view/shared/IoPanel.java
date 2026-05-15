@@ -2,7 +2,11 @@ package view.shared;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import util.FormatButton;
+
 import java.awt.*;
+import java.text.Format;
 
 public class IoPanel extends JPanel {
 
@@ -65,6 +69,7 @@ public class IoPanel extends JPanel {
 
 		JButton button = new JButton(label);
 		button.setFont(new Font("SansSerif", Font.PLAIN, 11));
+		FormatButton.formatButton(button, new Color(255, 152, 0));
 		button.setMargin(new Insets(1, 6, 1, 6));
 		button.addActionListener(e -> {
 			action.run();

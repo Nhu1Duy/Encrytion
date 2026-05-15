@@ -39,6 +39,8 @@ public class AppContext {
 	public final DES desModel = new DES();
 	public final Blowfish blowfishModel = new Blowfish();
 	public final RC4 rc4Model = new RC4();
+	public final Twofish twofishModel = new Twofish();
+	public final Serpent serpentModel = new Serpent();
 
 	public AppContext(MainFrame view) {
 		this.view = view;
@@ -82,6 +84,10 @@ public class AppContext {
 	            return blowfishModel;
 	        case SymmetricPanel.ALGO_RC4:
 	            return rc4Model;
+	        case SymmetricPanel.ALGO_TWOFISH:
+	            return twofishModel;
+	        case SymmetricPanel.ALGO_SERPENT:
+	            return serpentModel;
 	        default:
 	            return aesModel;
 	    }
@@ -96,6 +102,10 @@ public class AppContext {
 	            return "Blowfish";
 	        case SymmetricPanel.ALGO_RC4:
 	            return "RC4";
+	        case SymmetricPanel.ALGO_TWOFISH:
+	            return "Twofish";
+	        case SymmetricPanel.ALGO_SERPENT:
+	            return "Serpent";
 	        default:
 	            return "AES";
 	    }

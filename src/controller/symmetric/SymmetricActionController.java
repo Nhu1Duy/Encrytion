@@ -3,11 +3,9 @@ package controller.symmetric;
 import controller.AppContext;
 import model.mordern.symmetric.SymmetricCipher;
 import view.symmetric.SymmetricConfigPanel;
-
 import javax.crypto.SecretKey;
 
 public class SymmetricActionController {
-
 	private final AppContext ctx;
 	private final SymmetricKeyValidator keyValidator;
 
@@ -20,13 +18,14 @@ public class SymmetricActionController {
 		bindGenKeys();
 		bindEncryptDecrypt();
 	}
-
 	private void bindGenKeys() {
 		var sym = ctx.view.symmetricPanel;
 		bindGenKey(sym.getAesPanel(), ctx.aesModel, true);
 		bindGenKey(sym.getDesPanel(), ctx.desModel, false);
 		bindGenKey(sym.getBlowfishPanel(), ctx.blowfishModel, true);
 		bindGenKey(sym.getRc4Panel(), ctx.rc4Model, true);
+		bindGenKey(sym.getTwofishPanel(), ctx.twofishModel, true);
+		bindGenKey(sym.getSerpentPanel(), ctx.serpentModel, true);
 	}
 
 	private void bindGenKey(SymmetricConfigPanel panel, SymmetricCipher model, boolean hasVariableKeySize) {
@@ -63,7 +62,6 @@ public class SymmetricActionController {
 		try {
 			model.setTransformation(panel.getSelectedMode(), panel.getSelectedPadding());
 			model.loadKey(secretKey);
-
 			String result = encrypt ? model.encryptBase64(input) : model.decryptBase64(input);
 			ctx.view.ioPanel.getOutputArea().setText(result);
 			ctx.view.setStatus((encrypt ? "Mã hóa OK – " : "Giải mã OK – ") + ctx.view.symmetricPanel.getCurrentAlgo()
