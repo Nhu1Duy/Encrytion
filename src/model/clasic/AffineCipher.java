@@ -3,12 +3,8 @@ package model.clasic;
 import Tool.Alphabet;
 import java.util.Random;
 
-/*
- * E(x) = (a*x + b) mod m,  D(y) = a⁻¹*(y - b) mod m
- */
 public class AffineCipher implements ClassicCipher {
 
-	/// --- GEN KEY ---
 	public int[] genKey(int n) {
 		Random rand = new Random();
 		int a;
@@ -21,7 +17,6 @@ public class AffineCipher implements ClassicCipher {
 		return new int[] { a, b };
 	}
 
-	/// --- Implement ---
 	@Override
 	public String encryptEN(String plainText, String key) {
 		return process(plainText, parseKey(key), true, Alphabet.EN_ALPHABET_FUL);
@@ -42,7 +37,6 @@ public class AffineCipher implements ClassicCipher {
 		return process(cipherText, parseKey(key), false, Alphabet.VN_ALPHABET_FUL);
 	}
 
-	/// --- Handle ---
     private String process(String text, int[] ab, boolean encrypt, String alphabet) {
         int m   = alphabet.length();
         int a   = ab[0], b = ab[1];
@@ -70,7 +64,6 @@ public class AffineCipher implements ClassicCipher {
         return sb.toString();
     }
 
-	/// --- Side ---
 	private int[] parseKey(String key) {
 		String[] parts = key.split(",");
 		String part1 = parts[0].trim();

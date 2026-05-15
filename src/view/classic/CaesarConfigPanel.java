@@ -25,7 +25,6 @@ public class CaesarConfigPanel extends JPanel implements KeyPanel {
 		add(genBtn);
 	}
 
-	/// --- GETTER ---
 	public JTextField getKeyField() {
 		return keyField;
 	}
@@ -50,7 +49,6 @@ public class CaesarConfigPanel extends JPanel implements KeyPanel {
 		keyField.setText(v);
 	}
 
-	/// --- KEY PANEL ---
 	@Override
 	public String getKeyText() {
 		return keyField.getText().trim();

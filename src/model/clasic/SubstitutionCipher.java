@@ -5,12 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Substitution Cipher – mỗi ký tự trong alphabet được ánh xạ sang ký tự khác
- */
 public class SubstitutionCipher implements ClassicCipher {
 
-	/// --- GEN KEY ---
 	public static String genKey(String alphabet) {
 		List<Character> chars = new ArrayList<>(alphabet.length());
 		for (char c : alphabet.toCharArray())
@@ -22,7 +18,6 @@ public class SubstitutionCipher implements ClassicCipher {
 		return sb.toString();
 	}
 
-	/// --- Implement ---
 	@Override
 	public String encryptEN(String plainText, String key) {
 		return substitute(plainText, key, Alphabet.EN_ALPHABET_FUL, true);
@@ -42,8 +37,6 @@ public class SubstitutionCipher implements ClassicCipher {
 	public String decryptVN(String cipherText, String key) {
 		return substitute(cipherText, key, Alphabet.VN_ALPHABET_FUL, false);
 	}
-
-	/// --- Handle ---
 	private String substitute(String text, String key, String alphabet, boolean encrypt) {
 		String from;
 		String to;

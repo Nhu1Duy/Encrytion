@@ -21,8 +21,6 @@ public class SymmetricActionController {
 		bindEncryptDecrypt();
 	}
 
-	// ── Gen Key ──────────────────────────────────────────────────────────────
-
 	private void bindGenKeys() {
 		var sym = ctx.view.symmetricPanel;
 		bindGenKey(sym.getAesPanel(), ctx.aesModel, true);
@@ -38,8 +36,6 @@ public class SymmetricActionController {
 				panel.setKeyText(keyB64);
 		});
 	}
-
-	// ── Encrypt / Decrypt ────────────────────────────────────────────────────
 
 	private void bindEncryptDecrypt() {
 		ctx.view.sidePanel.getEncryptBtn().addActionListener(e -> {

@@ -10,66 +10,75 @@ import java.util.Base64;
 
 public class SymmetricKeyValidator {
 
-    private final AppContext ctx;
+    private final AppContext app; 
 
-    public SymmetricKeyValidator(AppContext ctx) {
-        this.ctx = ctx;
+    public SymmetricKeyValidator(AppContext app) {
+        this.app = app;
     }
 
-    /**
-     * Lấy key từ panel hiện tại, decode Base64 và wrap thành SecretKey.
-     * Trả về null nếu rỗng hoặc không hợp lệ.
-     */
     public SecretKey resolveCurrentKey() {
-        String keyB64 = ctx.view.symmetricPanel.getCurrentConfigPanel().getKeyText();
-        if (keyB64.isBlank()) {
-            ctx.showError("Vui lòng nhập key hoặc nhấn '⚡ Gen Key' để tạo!");
+        String inputKey = app.view.symmetricPanel.getCurrentConfigPanel().getKeyText();
+        
+        if (inputKey == null || inputKey.trim().length() == 0) {
+            app.showError("Key missing! Please generate or enter a key first.");
             return null;
         }
+
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(keyB64);
-            return new SecretKeySpec(keyBytes, ctx.currentSymAlgoName());
-        } catch (IllegalArgumentException ex) {
-            ctx.showError("Key không hợp lệ (không phải Base64):\n" + ex.getMessage());
+            byte[] rawBytes = Base64.getDecoder().decode(inputKey.trim());
+            String algorithm = app.currentSymAlgoName();
+            
+            SecretKeySpec secret = new SecretKeySpec(rawBytes, algorithm);
+            return secret;
+        } catch (Exception error) {
+            app.showError("Key format error: " + error.getLocalizedMessage());
             return null;
         }
     }
 
-    /**
-     * Validate input text không rỗng.
-     */
-    public boolean validateInput(String text, boolean encrypt) {
-        if (text == null || text.isBlank()) {
-            ctx.showError(encrypt ? "Vui lòng nhập văn bản cần mã hóa!"
-                                  : "Vui lòng nhập văn bản cần giải mã!");
+    public boolean validateInput(String data, boolean modeEncrypt) {
+        if (data == null || data.trim().equals("")) {
+            if (modeEncrypt == true) {
+                app.showError("Please type something to encrypt!");
+            } else {
+                app.showError("Please type something to decrypt!");
+            }
             return false;
         }
         return true;
     }
 
-    /**
-     * Gen key cho một panel + model cụ thể, trả về Base64.
-     * hasVariableKeySize = false với DES (key size cố định).
-     */
-    public String generateKeyBase64(SymmetricConfigPanel panel,
+    public String generateKeyBase64(SymmetricConfigPanel pnl,
                                     SymmetricCipher model,
-                                    boolean hasVariableKeySize) {
+                                    boolean checkSize) {
         try {
-            if (hasVariableKeySize) applyKeySize(model, panel.getSelectedKeySize());
-            SecretKey key = model.genKey();
-            return Base64.getEncoder().encodeToString(key.getEncoded());
-        } catch (Exception ex) {
-            ctx.showError("Lỗi sinh key: " + ex.getMessage());
+            if (checkSize == true) {
+                int bitLength = pnl.getSelectedKeySize();
+                setupKeyLength(model, bitLength);
+            }
+
+            SecretKey keyResult = model.genKey();
+            byte[] encodedKey = keyResult.getEncoded();
+            
+            return Base64.getEncoder().encodeToString(encodedKey);
+        } catch (Exception e) {
+            app.showError("Could not create key: " + e.getMessage());
             return null;
         }
     }
 
-    // ── Private ──────────────────────────────────────────────────────────────
-
-    private void applyKeySize(SymmetricCipher model, int keySize) {
-        if      (model instanceof AES m)      m.setKeySize(keySize);
-        else if (model instanceof Blowfish m) m.setKeySize(keySize);
-        else if (model instanceof RC4 m)      m.setKeySize(keySize);
-        // DES: cố định – bỏ qua
+    private void setupKeyLength(SymmetricCipher cipher, int size) {
+        if (cipher instanceof AES) {
+            AES temp = (AES) cipher;
+            temp.setKeySize(size);
+        } 
+        else if (cipher instanceof Blowfish) {
+            Blowfish temp = (Blowfish) cipher;
+            temp.setKeySize(size);
+        } 
+        else if (cipher instanceof RC4) {
+            RC4 temp = (RC4) cipher;
+            temp.setKeySize(size);
+        }
     }
 }

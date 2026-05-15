@@ -23,7 +23,6 @@ public class AffineConfigPanel extends JPanel implements KeyPanel {
 		add(genBtn);
 	}
 
-	/// --- GETTER
 	public JTextField getKeyA() {
 		return keyA;
 	}
@@ -44,7 +43,6 @@ public class AffineConfigPanel extends JPanel implements KeyPanel {
 		return genBtn;
 	}
 	
-	/// --- KEY PANEL ---
 	@Override
 	public String getKeyText() {
 		String a = keyA.getText().trim();

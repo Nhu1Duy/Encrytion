@@ -24,7 +24,6 @@ public class SubstitutionConfigPanel extends JPanel implements KeyPanel {
 		add(genBtn, BorderLayout.SOUTH);
 	}
 
-	/// --- GETTER ---
 	public JTextArea getKeyArea() {
 		return keyArea;
 	}
@@ -33,7 +32,6 @@ public class SubstitutionConfigPanel extends JPanel implements KeyPanel {
 		return genBtn;
 	}
 
-	/// --- KEY PANEL ---
 	@Override
 	public String getKeyText() {
 		return keyArea.getText().trim();

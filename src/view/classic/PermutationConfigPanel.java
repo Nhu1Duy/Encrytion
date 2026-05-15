@@ -23,7 +23,6 @@ public class PermutationConfigPanel extends JPanel implements KeyPanel {
 		add(genBtn);
 	}
 
-	/// --- GETTER
 	public JTextField getKeyField() {
 		return keyField;
 	}
@@ -36,7 +35,6 @@ public class PermutationConfigPanel extends JPanel implements KeyPanel {
 		return genBtn;
 	}
 
-	/// --- KEY PANEL ---
 	@Override
 	public String getKeyText() {
 		return keyField.getText().trim();

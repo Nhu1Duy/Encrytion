@@ -13,12 +13,7 @@ public class SymmetricPanel extends JPanel {
 
 	private static final String[] ALGO_NAMES = { ALGO_AES, ALGO_DES, ALGO_BLOWFISH, ALGO_RC4 };
 
-	private static final int[][] KEY_SIZES = 
-			{ { 128, 192, 256 }, 
-			{ 64 }, 
-			{ 128, 256, 448 }, 
-			{ 128, 256, 512 } 
-	};
+	private static final int[][] KEY_SIZES = { { 128, 192, 256 }, { 64 }, { 128, 256, 448 }, { 128, 256, 512 } };
 
 	private final SymmetricConfigPanel aesPanel;
 	private final SymmetricConfigPanel desPanel;
@@ -97,18 +92,18 @@ public class SymmetricPanel extends JPanel {
 		SymmetricConfigPanel selectedPanel;
 
 		switch (currentAlgo) {
-		    case ALGO_DES:
-		        selectedPanel = desPanel;
-		        break;
-		    case ALGO_BLOWFISH:
-		        selectedPanel = blowfishPanel;
-		        break;
-		    case ALGO_RC4:
-		        selectedPanel = rc4Panel;
-		        break;
-		    default:
-		        selectedPanel = aesPanel;
-		        break;
+		case ALGO_DES:
+			selectedPanel = desPanel;
+			break;
+		case ALGO_BLOWFISH:
+			selectedPanel = blowfishPanel;
+			break;
+		case ALGO_RC4:
+			selectedPanel = rc4Panel;
+			break;
+		default:
+			selectedPanel = aesPanel;
+			break;
 		}
 
 		return selectedPanel;

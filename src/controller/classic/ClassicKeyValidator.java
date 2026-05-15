@@ -2,61 +2,60 @@ package controller.classic;
 
 import controller.AppContext;
 
-
 public class ClassicKeyValidator {
 
-    private final AppContext ctx;
+    private final AppContext app;
 
-    public ClassicKeyValidator(AppContext ctx) {
-        this.ctx = ctx;
+    public ClassicKeyValidator(AppContext app) {
+        this.app = app;
     }
 
-    /**
-     * Kiểm tra khóa Substitution: phải là hoán vị đầy đủ của bảng chữ cái hiện tại.
-     */
-    public void validateSubstitutionKey(String key) throws Exception {
-        String alpha = ctx.currentAlphabet();
-        long alphaSize = alpha.codePoints().count();
-
-        if (key.codePoints().count() != alphaSize) {
-            throw new Exception(
-                "Khóa Substitution phải có đúng " + alphaSize + " ký tự (bằng kích thước bảng chữ cái)!"
-            );
+    public void validateSubstitutionKey(String inputKey) throws Exception {
+        String alphabet = app.currentAlphabet();
+        
+        if (inputKey == null || inputKey.length() != alphabet.length()) {
+            throw new Exception("Key must be exactly " + alphabet.length() + " characters long.");
         }
 
-        // Mỗi ký tự trong bảng chữ cái phải xuất hiện đúng một lần
-        for (int cp : alpha.codePoints().toArray()) {
-            String ch = new String(Character.toChars(cp));
-            long count = key.codePoints()
-                            .filter(c -> c == cp)
-                            .count();
+        boolean[] used = new boolean[alphabet.length()];
+        
+        for (int i = 0; i < alphabet.length(); i++) {
+            char target = alphabet.charAt(i);
+            int count = 0;
+            
+            for (int j = 0; j < inputKey.length(); j++) {
+                if (inputKey.charAt(j) == target) {
+                    count++;
+                }
+            }
+            
             if (count == 0) {
-                throw new Exception("Khóa thiếu ký tự '" + ch + "' của bảng chữ cái!");
+                throw new Exception("Key is missing the character: " + target);
             }
             if (count > 1) {
-                throw new Exception("Ký tự '" + ch + "' bị lặp lại trong khóa!");
+                throw new Exception("Character '" + target + "' is duplicated in the key.");
             }
         }
     }
 
-    /**
-     * Kiểm tra khóa Affine: a phải nguyên tố cùng nhau với kích thước bảng chữ cái.
-     */
-    public void validateAffineKey(int a, int b) throws Exception {
-        int size = ctx.alphabetSize();
-        if (gcd(a, size) != 1) {
-            throw new Exception(
-                "Khóa 'a' = " + a + " phải nguyên tố cùng nhau với kích thước bảng chữ cái (" + size + ")!"
-            );
+    public void validateAffineKey(int valA, int valB) throws Exception {
+        int m = app.alphabetSize();
+        
+        if (calculateGCD(valA, m) != 1) {
+            throw new Exception("Key 'a' (" + valA + ") must be coprime with alphabet size (" + m + ").");
         }
-        if (a <= 0) {
-            throw new Exception("Khóa 'a' phải là số nguyên dương!");
+        
+        if (valA <= 0) {
+            throw new Exception("Key 'a' must be a positive integer.");
         }
     }
 
-    // ── helper ────────────────────────────────────────────────────────────────
-
-    private int gcd(int a, int b) {
-        return b == 0 ? Math.abs(a) : gcd(b, a % b);
+    private int calculateGCD(int num1, int num2) {
+        while (num2 != 0) {
+            int temp = num1 % num2;
+            num1 = num2;
+            num2 = temp;
+        }
+        return Math.abs(num1);
     }
 }

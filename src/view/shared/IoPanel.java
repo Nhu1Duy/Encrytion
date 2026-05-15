@@ -28,9 +28,6 @@ public class IoPanel extends JPanel {
 		add(createWrapper(new JScrollPane(outputArea), "Kết quả (Output)", outputToolbar));
 	}
 
-	// =========================
-	//  TEXT AREA
-	// =========================
 	private JTextArea createTextArea(boolean readOnly) {
 
 		JTextArea area = new JTextArea();
@@ -46,9 +43,6 @@ public class IoPanel extends JPanel {
 		return area;
 	}
 
-	// =========================
-	//  PANEL
-	// =========================
 	private JPanel createWrapper(JScrollPane scroll, String title, JPanel toolbar) {
 
 		JPanel panel = new JPanel(new BorderLayout());
@@ -78,10 +72,7 @@ public class IoPanel extends JPanel {
 
 		return button;
 	}
-
-	// =========================
-	// GETTERS
-	// =========================
+	
 	public JTextArea getInputArea() {
 		return inputArea;
 	}

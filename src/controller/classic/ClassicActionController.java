@@ -22,8 +22,6 @@ public class ClassicActionController {
 		bindAllGenKeys();
 	}
 
-	// ── Encrypt / Decrypt ────────────────────────────────────────────────────
-
 	private void bindEncryptDecrypt() {
 		ctx.view.sidePanel.getEncryptBtn().addActionListener(e -> {
 			if (ctx.isClassicMode())
@@ -72,8 +70,7 @@ public class ClassicActionController {
 		}
 	}
 
-	// ── cipher handler ───────────────────────────────────────────────────
-
+	
 	private String handleCaesar(String input, boolean enc) throws Exception {
 		String key = classicView.getCaesarPanel().getTextKeyField().trim();
 		if (key.isEmpty())
@@ -140,8 +137,6 @@ public class ClassicActionController {
 				: (ctx.isVN() ? ctx.permutationCipher.decryptVN(input, key)
 						: ctx.permutationCipher.decryptEN(input, key));
 	}
-
-	// ── Gen Key ──────────────────────────────────────────────────────────────
 
 	private void bindAllGenKeys() {
 		bindCaesarGenKey();

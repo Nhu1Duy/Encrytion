@@ -1,191 +1,155 @@
 package view.symmetric;
 
 import view.shared.KeyPanel;
-
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 public class SymmetricConfigPanel extends JPanel implements KeyPanel {
 
-	private static final String[] BLOCK_MODES = { "CBC", "ECB", "CFB", "OFB", "CTR" };
-	private static final String[] AES_MODES = { "CBC", "ECB", "CFB", "OFB", "CTR", "GCM" };
-	private static final String[] PADDINGS = { "PKCS5Padding", "NoPadding", "ISO10126Padding" };
+    private static final String[] BLOCK_MODES = {"CBC", "ECB", "CFB", "OFB", "CTR"};
+    private static final String[] AES_MODES = {"CBC", "ECB", "CFB", "OFB", "CTR", "GCM"};
+    private static final String[] PADDING_LIST = {"PKCS5Padding", "NoPadding", "ISO10126Padding"};
 
-	private final String algoName;
-	private final int[] keySizes;
-	private final boolean isStreamCipher;
+    private final String algoName;
+    private final int[] keySizes;
+    private final boolean isStreamCipher;
 
-	private JComboBox<String> keySizeCombo;
-	private JComboBox<String> modeCombo;
-	private JComboBox<String> paddingCombo;
-	private JTextArea keyArea;
-	private JButton genBtn;
+    private JComboBox<String> cbKeySize;
+    private JComboBox<String> cbMode;
+    private JComboBox<String> cbPadding;
+    private JTextArea txtKey;
+    private JButton btnGen;
 
-	public SymmetricConfigPanel(String algoName, int[] keySizes, boolean isStreamCipher) {
-		this.algoName = algoName;
-		this.keySizes = keySizes;
-		this.isStreamCipher = isStreamCipher;
-		initUI();
-	}
+    public SymmetricConfigPanel(String algoName, int[] keySizes, boolean isStreamCipher) {
+        this.algoName = algoName;
+        this.keySizes = keySizes;
+        this.isStreamCipher = isStreamCipher;
+        setupInterface();
+    }
 
-	private void initUI() {
-		setLayout(new BorderLayout(0, 8));
-		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Cấu hình – " + algoName,
-				TitledBorder.LEFT, TitledBorder.TOP));
+    private void setupInterface() {
+        setLayout(new BorderLayout(10, 10));
+        setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(), 
+                "Config – " + algoName,
+                TitledBorder.LEFT, TitledBorder.TOP));
 
-		JPanel form = new JPanel(new GridBagLayout());
-		form.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-		GridBagConstraints lc = labelConstraints();
-		GridBagConstraints fc = fieldConstraints();
-		int row = 0;
+        JPanel mainContent = new JPanel(new BorderLayout(0, 10));
+        mainContent.setOpaque(false);
 
-		// ── Key size ──────────────────────────────────────────────────────────
-		keySizeCombo = new JComboBox<>(buildSizeOptions());
-		form.add(label("Key size:"), at(lc, row));
-		form.add(keySizeCombo, at(fc, row));
-		row++;
+        int rows;
+        if (isStreamCipher) {
+            rows = 1;
+        } else {
+            rows = 3;
+        }
 
-		// ── Mode + Padding ────────────────────────────────
-		if (!isStreamCipher) {
-		    if (algoName.equals("AES")) {
-		        modeCombo = new JComboBox(AES_MODES);
-		    } else {
-		        modeCombo = new JComboBox(BLOCK_MODES);
-		    }
-		    
-		    paddingCombo = new JComboBox(PADDINGS);
+        JPanel settingsGrid = new JPanel(new GridLayout(rows, 2, 5, 8));
+        settingsGrid.setOpaque(false);
 
-		    form.add(label("Mode:"), at(lc, row));
-		    form.add(modeCombo, at(fc, row));
-		    row++;
+        settingsGrid.add(new JLabel("Key size:"));
+        cbKeySize = new JComboBox<>(buildSizeOptions());
+        settingsGrid.add(cbKeySize);
 
-		    form.add(label("Padding:"), at(lc, row));
-		    form.add(paddingCombo, at(fc, row));
-		    row++;
-			modeCombo.addActionListener(e -> {
-				String mode = (String) modeCombo.getSelectedItem();
-				
-	            switch (mode) {
-	                case "GCM":
-	                case "CTR":
-	                case "CFB":
-	                case "OFB":
-	                    paddingCombo.setSelectedItem("NoPadding");
-	                    paddingCombo.setEnabled(false); 
-	                    break;
-	                default:
-	                    paddingCombo.setSelectedItem("PKCS5Padding");
-	                    paddingCombo.setEnabled(true);  
-	                    break;
-	            }	
-			});
-		}
+        if (!isStreamCipher) {
+            settingsGrid.add(new JLabel("Mode:"));
+            
+            if (algoName.equals("AES")) {
+                cbMode = new JComboBox<>(AES_MODES);
+            } else {
+                cbMode = new JComboBox<>(BLOCK_MODES);
+            }
+            settingsGrid.add(cbMode);
 
-		// ── Key (Base64) ──────────────────────────────────────────────────────
-		keyArea = new JTextArea(3, 0);
-		keyArea.setLineWrap(true);
-		keyArea.setWrapStyleWord(true);
-		keyArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+            settingsGrid.add(new JLabel("Padding:"));
+            cbPadding = new JComboBox<>(PADDING_LIST);
+            settingsGrid.add(cbPadding);
 
-		GridBagConstraints keyLc = (GridBagConstraints) lc.clone();
-		keyLc.gridy = row;
-		keyLc.anchor = GridBagConstraints.NORTHWEST;
-		keyLc.insets = new Insets(6, 0, 0, 8);
+            cbMode.addActionListener(e -> {
+                String mode = (String) cbMode.getSelectedItem();
+                if ("GCM".equals(mode) || "CTR".equals(mode) || "CFB".equals(mode) || "OFB".equals(mode)) {
+                    cbPadding.setSelectedItem("NoPadding");
+                    cbPadding.setEnabled(false);
+                } else {
+                    cbPadding.setSelectedItem("PKCS5Padding");
+                    cbPadding.setEnabled(true);
+                }
+            });
+        }
 
-		GridBagConstraints keyFc = (GridBagConstraints) fc.clone();
-		keyFc.gridy = row;
-		keyFc.weighty = 1.0;
-		keyFc.fill = GridBagConstraints.BOTH;
-		keyFc.insets = new Insets(6, 0, 0, 0);
+        JPanel keyPanel = new JPanel(new BorderLayout(0, 5));
+        keyPanel.setOpaque(false);
+        keyPanel.add(new JLabel("Key (Base64):"), BorderLayout.NORTH);
+        
+        txtKey = new JTextArea(4, 0);
+        txtKey.setLineWrap(true);
+        txtKey.setWrapStyleWord(true);
+        txtKey.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        keyPanel.add(new JScrollPane(txtKey), BorderLayout.CENTER);
 
-		form.add(label("Key (Base64):"), keyLc);
-		form.add(new JScrollPane(keyArea), keyFc);
+        mainContent.add(settingsGrid, BorderLayout.NORTH);
+        mainContent.add(keyPanel, BorderLayout.CENTER);
 
-		// ── Gen Key button ────────────────────────────────────────────────────
-		genBtn = new JButton("⚡ Gen Key");
-		genBtn.setFocusPainted(false);
-		genBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnGen = new JButton("⚡ Generate Key");
+        btnGen.setFocusPainted(false);
+        
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        footer.setOpaque(false);
+        footer.add(btnGen);
 
-		JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-		btnRow.setOpaque(false);
-		btnRow.add(genBtn);
+        add(mainContent, BorderLayout.CENTER);
+        add(footer, BorderLayout.SOUTH);
+    }
 
-		add(form, BorderLayout.CENTER);
-		add(btnRow, BorderLayout.SOUTH);
-	}
+    private String[] buildSizeOptions() {
+        String[] opts = new String[keySizes.length];
+        for (int i = 0; i < keySizes.length; i++) {
+            opts[i] = keySizes[i] + " bit";
+        }
+        return opts;
+    }
 
-	// ── GridBagConstraints helpers ────────────────────────────────────────────
+    public int getSelectedKeySize() {
+        int idx = cbKeySize.getSelectedIndex();
+        if (idx >= 0) {
+            return keySizes[idx];
+        } else {
+            return keySizes[0];
+        }
+    }
 
-	private GridBagConstraints labelConstraints() {
-		GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 0;
-		c.anchor = GridBagConstraints.WEST;
-		c.insets = new Insets(4, 0, 4, 10);
-		c.fill = GridBagConstraints.NONE;
-		c.weightx = 0;
-		return c;
-	}
+    public String getSelectedMode() {
+        if (cbMode != null) {
+            return (String) cbMode.getSelectedItem();
+        } else {
+            return null;
+        }
+    }
 
-	private GridBagConstraints fieldConstraints() {
-		GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 1;
-		c.anchor = GridBagConstraints.WEST;
-		c.insets = new Insets(4, 0, 4, 0);
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.weightx = 1.0;
-		return c;
-	}
+    public String getSelectedPadding() {
+        if (cbPadding != null) {
+            return (String) cbPadding.getSelectedItem();
+        } else {
+            return null;
+        }
+    }
 
-	private GridBagConstraints at(GridBagConstraints base, int row) {
-		GridBagConstraints c = (GridBagConstraints) base.clone();
-		c.gridy = row;
-		return c;
-	}
+    public JButton getGenBtn() { 
+        return btnGen; 
+    }
 
-	private JLabel label(String text) {
-		JLabel l = new JLabel(text);
-		l.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-		return l;
-	}
+    @Override
+    public String getKeyText() { 
+        return txtKey.getText().trim(); 
+    }
 
-	private String[] buildSizeOptions() {
-		String[] opts = new String[keySizes.length];
-		for (int i = 0; i < keySizes.length; i++)
-			opts[i] = keySizes[i] + " bit";
-		return opts;
-	}
-
-	// ── Getters ──────────────────────────────────────────────────────────────
-
-	public int getSelectedKeySize() {
-		int idx = keySizeCombo.getSelectedIndex();
-		return (idx >= 0) ? keySizes[idx] : keySizes[0];
-	}
-
-	public String getSelectedMode() {
-		return modeCombo != null ? (String) modeCombo.getSelectedItem() : null;
-	}
-
-	public String getSelectedPadding() {
-		return paddingCombo != null ? (String) paddingCombo.getSelectedItem() : null;
-	}
-
-	public JButton getGenBtn() {
-		return genBtn;
-	}
-
-	public JTextArea getKeyArea() {
-		return keyArea;
-	}
-
-	@Override
-	public String getKeyText() {
-		return keyArea.getText().trim();
-	}
-
-	@Override
-	public void setKeyText(String key) {
-		keyArea.setText(key == null ? "" : key.trim());
-	}
+    @Override
+    public void setKeyText(String key) {
+        if (key == null) {
+            txtKey.setText("");
+        } else {
+            txtKey.setText(key.trim());
+        }
+    }
 }

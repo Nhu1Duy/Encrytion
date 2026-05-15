@@ -69,8 +69,6 @@ public class ClassicCipherPanel extends JPanel {
 	    }
 	}
 
-	// ── getters  ──────────────────────────────────────────────────
-
 	public CaesarConfigPanel getCaesarPanel() {
 		return caesarPanel;
 	}

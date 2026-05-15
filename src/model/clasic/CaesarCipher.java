@@ -3,12 +3,10 @@ import Tool.Alphabet;
 
 public class CaesarCipher implements ClassicCipher{
 	
-	/// --- GEN KEY ---
 	public static int genKey(int max) {
 		return (int) (Math.random() * max) + 1;
 	}
 	
-	/// --- Implement ---
 	@Override
     public String encryptEN(String plainText, String key) {
         return handle(plainText, parseKey(key), Alphabet.EN_ALPHABET_FUL);
@@ -29,7 +27,6 @@ public class CaesarCipher implements ClassicCipher{
         return handle(cipherText, -parseKey(key), Alphabet.VN_ALPHABET_FUL);
     }
 	
-    /// --- Handle ---
     private String handle(String text, int k, String alphabet) {
         int n = alphabet.length();
         StringBuilder sb = new StringBuilder(text.length());

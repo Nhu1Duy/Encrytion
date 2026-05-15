@@ -6,164 +6,163 @@ import view.shared.HeaderPanel;
 import view.shared.IoPanel;
 import view.shared.SidePanel;
 import view.symmetric.SymmetricPanel;
+import view.hash.HashPanel;
 import controller.AppController;
 import util.SecurityProvider;
-import view.hash.HashPanel;
+
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 
 public class MainFrame {
-
+	
 	public final JFrame frame = new JFrame();
-
-	// ── Sub-panels ──────────────────────────
 	public final HeaderPanel headerPanel;
 	public final SidePanel sidePanel;
 	public final IoPanel ioPanel;
 	public final ClassicCipherPanel classicPanel;
 	public final SymmetricPanel symmetricPanel;
-	public final AsymmetricPanel asymmetricPanel; 
+	public final AsymmetricPanel asymmetricPanel;
 	public final HashPanel hashPanel;
-	// ── Menu items ──────────────────────────────────────────────────────────
-	// File
+	
 	public final JMenuItem itemImportInput = new JMenuItem("📥 Import Input");
 	public final JMenuItem itemSaveOutput = new JMenuItem("💾 Save Output");
 	public final JMenuItem itemImportKey = new JMenuItem("📥 Import Key");
 	public final JMenuItem itemSaveKey = new JMenuItem("💾 Save Key");
 	public final JMenuItem itemClearAll = new JMenuItem("🗑 Xóa tất cả");
-
-	// Thuật toán — classic
 	public final JMenuItem itemCaesar = new JMenuItem("Dịch Chuyển (Caesar)");
 	public final JMenuItem itemSubstitution = new JMenuItem("Thay Thế (Substitution)");
 	public final JMenuItem itemAffine = new JMenuItem("Affine");
 	public final JMenuItem itemVigenere = new JMenuItem("Vigenere");
 	public final JMenuItem itemHill = new JMenuItem("Hill (Ma trận)");
 	public final JMenuItem itemPermutation = new JMenuItem("Hoán Vị (Permutation)");
-
-	// Thuật toán — symmetric
 	public final JMenuItem itemSymmetric = new JMenuItem("Đối Xứng Hiện Đại (Symmetric)");
-
-	// Thuật toán — asymmetric  
 	public final JMenuItem itemAsymmetric = new JMenuItem("Bất Đối Xứng (RSA)");
-	
 	public final JMenuItem itemHash = new JMenuItem("Hàm Băm (Hash)");
-	// Ngôn ngữ
 	public final JMenuItem itemVN = new JMenuItem("Tiếng Việt");
 	public final JMenuItem itemEN = new JMenuItem("English");
-
-	// ── Constructor ─────────────────────────────────────────────────────────
-
+	
 	public MainFrame() {
 		headerPanel = new HeaderPanel();
 		sidePanel = new SidePanel();
 		ioPanel = new IoPanel();
 		classicPanel = new ClassicCipherPanel();
 		symmetricPanel = new SymmetricPanel();
-		asymmetricPanel = new AsymmetricPanel(); 
+		asymmetricPanel = new AsymmetricPanel();
 		hashPanel = new HashPanel();
 		
-		configureFrame();
-		buildMenuBar();
-		registerSideCards();
-		wireIoToolbarButtons();
-
+		initializeFrame();
+		constructMenu();
+		registerCards();
+		bindToolbarButtons();
+		
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
-
-	// ── setup ────────────────────────────────────────────────────────
-
-	private void configureFrame() {
+	
+	private void initializeFrame() {
 		frame.setTitle("Công cụ mã hóa");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(980, 620);
 		frame.setLayout(new BorderLayout(10, 10));
-
-		URL icon = getClass().getResource("icon.png");
-		if (icon != null)
-			frame.setIconImage(new ImageIcon(icon).getImage());
-
+		
+		try {
+			URL res = getClass().getResource("icon.png");
+			if (res != null) {
+				frame.setIconImage(new ImageIcon(res).getImage());
+			}
+		} catch (Exception e) {
+			// icon không tìm được, sử dụng mặc định
+		}
+		
 		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(sidePanel, BorderLayout.WEST);
 		frame.add(ioPanel, BorderLayout.CENTER);
 	}
-
-	private void registerSideCards() {
+	
+	private void registerCards() {
 		sidePanel.addCard(classicPanel, "Classic");
 		sidePanel.addCard(symmetricPanel, "Symmetric");
-		sidePanel.addCard(asymmetricPanel, "Asymmetric"); 
+		sidePanel.addCard(asymmetricPanel, "Asymmetric");
 		sidePanel.addCard(hashPanel, "Hash");
 		sidePanel.showCard("Classic");
 	}
-
-	private void wireIoToolbarButtons() {
+	
+	private void bindToolbarButtons() {
 		ioPanel.addInputToolbarButton("📂 Import", () -> itemImportInput.doClick());
 		ioPanel.addOutputToolbarButton("💾 Save", () -> itemSaveOutput.doClick());
 	}
-
-	private void buildMenuBar() {
-		JMenuBar bar = new JMenuBar();
-
-		JMenu fileMenu = new JMenu("File ▼");
-		fileMenu.add(itemImportInput);
-		fileMenu.add(itemSaveOutput);
-		fileMenu.addSeparator();
-		fileMenu.add(itemImportKey);
-		fileMenu.add(itemSaveKey);
-		fileMenu.addSeparator();
-		fileMenu.add(itemClearAll);
-
-		JMenu algoMenu = new JMenu("Thuật toán ▼");
-		JMenu classicSubMenu = new JMenu("Cổ Điển");
-		classicSubMenu.add(itemCaesar);
-		classicSubMenu.add(itemSubstitution);
-		classicSubMenu.add(itemAffine);
-		classicSubMenu.add(itemVigenere);
-		classicSubMenu.add(itemHill);
-		classicSubMenu.add(itemPermutation);
-		algoMenu.add(classicSubMenu);
-		algoMenu.addSeparator();
-		algoMenu.add(itemSymmetric);
-		algoMenu.addSeparator(); 
-		algoMenu.add(itemAsymmetric); 
-		algoMenu.addSeparator(); 
-		algoMenu.add(itemHash); 
-
-		JMenu langMenu = new JMenu("Ngôn ngữ ▼");
-		langMenu.add(itemVN);
-		langMenu.add(itemEN);
-
-		bar.add(fileMenu);
-		bar.add(algoMenu);
-		bar.add(langMenu);
-		frame.setJMenuBar(bar);
+	
+	private void constructMenu() {
+		JMenuBar mb = new JMenuBar();
+		
+		// File menu
+		JMenu file = new JMenu("File ▼");
+		file.add(itemImportInput);
+		file.add(itemSaveOutput);
+		file.addSeparator();
+		file.add(itemImportKey);
+		file.add(itemSaveKey);
+		file.addSeparator();
+		file.add(itemClearAll);
+		
+		// Algorithm menu
+		JMenu algo = new JMenu("Thuật toán ▼");
+		JMenu classic = new JMenu("Cổ Điển");
+		classic.add(itemCaesar);
+		classic.add(itemSubstitution);
+		classic.add(itemAffine);
+		classic.add(itemVigenere);
+		classic.add(itemHill);
+		classic.add(itemPermutation);
+		
+		algo.add(classic);
+		algo.addSeparator();
+		algo.add(itemSymmetric);
+		algo.addSeparator();
+		algo.add(itemAsymmetric);
+		algo.addSeparator();
+		algo.add(itemHash);
+		
+		// Language menu
+		JMenu lang = new JMenu("Ngôn ngữ ▼");
+		lang.add(itemVN);
+		lang.add(itemEN);
+		
+		mb.add(file);
+		mb.add(algo);
+		mb.add(lang);
+		frame.setJMenuBar(mb);
 	}
-
-	// ── shortcuts ────────────────────────────────────────────────────────────
-
+	
 	public void switchToClassic(String cipherName) {
-	    sidePanel.showCard("Classic " + cipherName);
-	    classicPanel.showCipher(cipherName);
-	    setStatus("Thuật toán: " + cipherName);
+		sidePanel.showCard("Classic " + cipherName);
+		classicPanel.showCipher(cipherName);
+		setStatus("Thuật toán: " + cipherName);
 	}
-
+	
 	public void switchToSymmetric() {
-	    sidePanel.showCard("Symmetric");
-	    setStatus("Thuật toán: Đối xứng hiện đại");
+		sidePanel.showCard("Symmetric");
+		setStatus("Thuật toán: Đối xứng hiện đại");
 	}
-	public void switchToAsymmetric() { 
-	    sidePanel.showCard("Asymmetric");
-	    setStatus("Thuật toán: RSA (Bất đối xứng)");
+	
+	public void switchToAsymmetric() {
+		sidePanel.showCard("Asymmetric");
+		setStatus("Thuật toán: RSA (Bất đối xứng)");
 	}
-
+	
+	public void switchToHash() {
+		sidePanel.showCard("Hash");
+		setStatus("Thuật toán: Hàm Băm");
+	}
+	
 	public void setStatus(String text) {
-	    headerPanel.setStatus(text);
+		headerPanel.setStatus(text);
 	}
-
+	
 	public static void main(String[] args) {
-		MainFrame mf = new MainFrame();
+		MainFrame window = new MainFrame();
 		SecurityProvider.init();
-		new AppController(mf).bind();
+		new AppController(window).bind();
 	}
 }
