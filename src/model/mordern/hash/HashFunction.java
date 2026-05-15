@@ -2,9 +2,9 @@ package model.mordern.hash;
 
 public interface HashFunction {
  
-    String hashString(String input);
+    String hashString(String text);
 
-    String hashFile(String filePath) throws Exception;
+    String hashFile(String path) throws Exception;
 
     String getAlgorithmName();
 }

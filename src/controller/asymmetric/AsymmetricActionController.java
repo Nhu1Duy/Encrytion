@@ -1,11 +1,23 @@
 package controller.asymmetric;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.Base64;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
-
+import javax.crypto.spec.IvParameterSpec;
 import controller.AppContext;
 import model.mordern.asymmetric.RSAFileV1;
 
@@ -21,8 +33,6 @@ public class AsymmetricActionController {
 		bindGenKeys();
 		bindEncryptDecrypt();
 	}
-
-	// ── Gen Key Pair ──────────────────────────────────────────────────────────
 
 	private void bindGenKeys() {
 		ctx.view.asymmetricPanel.getGenKeyPairBtn().addActionListener(e -> {
@@ -45,73 +55,92 @@ public class AsymmetricActionController {
 		ctx.view.asymmetricPanel.setPublicKeyText(encoder.encodeToString(kp.getPublic().getEncoded()));
 		ctx.view.asymmetricPanel.setPrivateKeyText(encoder.encodeToString(kp.getPrivate().getEncoded()));
 
-		JOptionPane.showMessageDialog(
-			ctx.view.frame,
-			"Đã tạo cặp khóa RSA " + keySize + "-bit thành công!",
-			"Tạo khóa",
-			JOptionPane.INFORMATION_MESSAGE
-		);
+		JOptionPane.showMessageDialog(ctx.view.frame, "Đã tạo cặp khóa RSA " + keySize + "-bit thành công!", "Tạo khóa",
+				JOptionPane.INFORMATION_MESSAGE);
 	}
-
-	// ── Encrypt / Decrypt ─────────────────────────────────────────────────────
 
 	private void bindEncryptDecrypt() {
 		ctx.view.sidePanel.getEncryptBtn().addActionListener(e -> {
-			if (!ctx.isSymmetricMode()) handleCrypto(true);
+			if (!ctx.isSymmetricMode())
+				handleCrypto(true);
 		});
 		ctx.view.sidePanel.getDecryptBtn().addActionListener(e -> {
-			if (!ctx.isSymmetricMode()) handleCrypto(false);
+			if (!ctx.isSymmetricMode())
+				handleCrypto(false);
 		});
 	}
-
 	private void handleCrypto(boolean encrypt) {
-		String input = ctx.view.ioPanel.getInputArea().getText().trim();
+        String input = ctx.view.ioPanel.getInputArea().getText().trim();
+        if (input.isEmpty()) {
+            ctx.showError(encrypt ? "Vui lòng nhập text!" : "Dữ liệu trống!");
+            return;
+        }
 
-		if (input.isEmpty()) {
-			ctx.showError(encrypt ? "Vui lòng nhập text cần mã hóa!" : "Vui lòng nhập text cần giải mã!");
-			return;
-		}
+        try {
+            String result;
+            if (encrypt) {
+                String pubKeyText = ctx.view.asymmetricPanel.getPublicKeyText();
+                PublicKey publicKey = RSAFileV1.readPublicKeyFromText(pubKeyText);
 
-		// Read transformation from panel (key size is baked into the key itself)
-		String transformation = ctx.view.asymmetricPanel.getTransformation();
-		String padding        = ctx.view.asymmetricPanel.getSelectedPadding();
+                KeyGenerator kgen = KeyGenerator.getInstance("AES");
+                kgen.init(128);
+                SecretKey skey = kgen.generateKey();
+                byte[] iv = new byte[16];
+                new SecureRandom().nextBytes(iv);
 
-		try {
-			String result;
+                Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                aesCipher.init(Cipher.ENCRYPT_MODE, skey, new IvParameterSpec(iv));
+                byte[] encryptedText = aesCipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
 
-			if (encrypt) {
-				String pubKeyText = ctx.view.asymmetricPanel.getPublicKeyText();
-				if (pubKeyText.isBlank()) {
-					ctx.showError("Chưa có public key. Vui lòng tạo hoặc nhập public key.");
-					return;
-				}
+                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
+                byte[] wrappedKey = rsaCipher.doFinal(skey.getEncoded());
+                byte[] wrappedIv = rsaCipher.doFinal(iv);
 
-				var publicKey = RSAFileV1.readPublicKeyFromText(pubKeyText);
-				var cipher    = javax.crypto.Cipher.getInstance(transformation);
-				cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, publicKey);
-				byte[] encrypted = cipher.doFinal(input.getBytes("UTF-8"));
-				result = Base64.getEncoder().encodeToString(encrypted);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(baos);
+                
+                dos.writeInt(wrappedKey.length); 
+                dos.write(wrappedKey);          
+                dos.writeInt(wrappedIv.length);  
+                dos.write(wrappedIv);            
+                dos.write(encryptedText);       
+                
+                dos.flush();
+                result = Base64.getEncoder().encodeToString(baos.toByteArray());
 
-			} else {
-				String privKeyText = ctx.view.asymmetricPanel.getPrivateKeyText();
-				if (privKeyText.isBlank()) {
-					ctx.showError("Chưa có private key. Vui lòng nhập private key.");
-					return;
-				}
+            } else {
+                String privKeyText = ctx.view.asymmetricPanel.getPrivateKeyText();
+                PrivateKey privateKey = RSAFileV1.readPrivateKeyFromText(privKeyText);
+                
+                byte[] decodedData = Base64.getDecoder().decode(input);
+                DataInputStream dis = new DataInputStream(new ByteArrayInputStream(decodedData));
 
-				var privateKey = RSAFileV1.readPrivateKeyFromText(privKeyText);
-				var cipher     = javax.crypto.Cipher.getInstance(transformation);
-				cipher.init(javax.crypto.Cipher.DECRYPT_MODE, privateKey);
-				byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(input));
-				result = new String(decrypted, "UTF-8");
-			}
+                byte[] wrappedKey = new byte[dis.readInt()];
+                dis.readFully(wrappedKey);
+                
+                byte[] wrappedIv = new byte[dis.readInt()];
+                dis.readFully(wrappedIv);
+                
+                byte[] encryptedContent = dis.readAllBytes();
 
-			ctx.view.ioPanel.getOutputArea().setText(result);
-			ctx.view.setStatus((encrypt ? "Mã hóa OK – " : "Giải mã OK – ")
-				+ "RSA/ECB/" + padding);
+                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
+                byte[] keyBytes = rsaCipher.doFinal(wrappedKey);
+                byte[] ivBytes = rsaCipher.doFinal(wrappedIv);
 
-		} catch (Exception ex) {
-			ctx.showError((encrypt ? "Lỗi mã hóa: " : "Lỗi giải mã: ") + ex.getMessage());
-		}
-	}
+                Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                aesCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(ivBytes));
+                
+                byte[] plainTextBytes = aesCipher.doFinal(encryptedContent);
+                result = new String(plainTextBytes, StandardCharsets.UTF_8);
+            }
+            ctx.view.ioPanel.getOutputArea().setText(result);
+            ctx.view.setStatus((encrypt ? "Mã hóa Hybrid OK" : "Giải mã Hybrid OK"));
+
+        } catch (Exception ex) {
+            ctx.showError("Lỗi xử lý: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
 }

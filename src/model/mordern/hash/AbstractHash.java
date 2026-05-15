@@ -9,73 +9,46 @@ import java.security.MessageDigest;
 
 public abstract class AbstractHash implements HashFunction {
 
-    protected abstract String getAlgorithm();
+	protected abstract String getAlgorithm();
 
-    @Override
-    public String hashString(String input) {
+	@Override
+	public String hashString(String text) {
+		try {
+			MessageDigest messageDigest = MessageDigest.getInstance(getAlgorithm(), "BC");
+			byte[] hashedBytes = messageDigest.digest(text.getBytes());
+			
+			BigInteger decimalValue = new BigInteger(1, hashedBytes);
+			return decimalValue.toString(16);
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
 
-        try {
+	@Override
+	public String hashFile(String path) throws Exception {
+		try {
+			MessageDigest messageDigest = MessageDigest.getInstance(getAlgorithm(), "BC");
+			InputStream input = new BufferedInputStream(new FileInputStream(path));
+			
+			DigestInputStream digestStream = new DigestInputStream(input, messageDigest);
+			
+			byte[] dataBlock = new byte[1024];
+			while (digestStream.read(dataBlock) != -1) {
+			}
+			
+			digestStream.close();
+			input.close();
 
-            MessageDigest md =
-                    MessageDigest.getInstance(
-                            getAlgorithm(),
-                            "BC");
+			BigInteger decimalValue = new BigInteger(1, messageDigest.digest());
+			return decimalValue.toString(16);
 
-            byte[] digest =
-                    md.digest(input.getBytes());
+		} catch (Exception ex) {
+			throw new Exception(ex);
+		}
+	}
 
-            BigInteger number =
-                    new BigInteger(1, digest);
-
-            return number.toString(16);
-
-        } catch (Exception e) {
-
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String hashFile(String filePath)
-            throws Exception {
-
-        try {
-
-            MessageDigest md =
-                    MessageDigest.getInstance(
-                            getAlgorithm(),
-                            "BC");
-
-            InputStream is =
-                    new BufferedInputStream(
-                            new FileInputStream(filePath));
-
-            DigestInputStream dis =
-                    new DigestInputStream(is, md);
-
-            byte[] buffer = new byte[1024];
-
-            while (dis.read(buffer) != -1) {
-            }
-
-            dis.close();
-            is.close();
-
-            BigInteger number =
-                    new BigInteger(
-                            1,
-                            md.digest());
-
-            return number.toString(16);
-
-        } catch (Exception e) {
-
-            throw new Exception(e);
-        }
-    }
-
-    @Override
-    public String getAlgorithmName() {
-        return getAlgorithm();
-    }
+	@Override
+	public String getAlgorithmName() {
+		return getAlgorithm();
+	}
 }

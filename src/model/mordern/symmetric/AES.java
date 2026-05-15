@@ -4,191 +4,166 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import javax.crypto.spec.GCMParameterSpec;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
-import javax.crypto.spec.GCMParameterSpec;
 
 public class AES implements SymmetricCipher {
 
-	private SecretKey key;
-	private IvParameterSpec iv;
-	private String algorithm = "AES";
-	private String transformation = "AES/CBC/PKCS5Padding";
+	private SecretKey secretKey;
+	private IvParameterSpec initVector;
+	private String baseAlgo = "AES";
+	private String currentTransform = "AES/CBC/PKCS5Padding";
+	private int currentKeyBits = 128;
 
-	/**
-	 * KEY SIZE hỗ trợ: 128, 192, 256 bit
-	 */
-	private int keySize = 128;
-
-	// =========================
-	// CHỌN KEY SIZE
-	// =========================
-	public void setKeySize(int keySize) {
-		if (keySize != 128 && keySize != 192 && keySize != 256) {
-			throw new IllegalArgumentException("AES key size phải là 128, 192 hoặc 256 bit.");
+	public void setKeySize(int size) {
+		boolean isValid = (size == 128 || size == 192 || size == 256);
+		if (!isValid) {
+			throw new IllegalArgumentException("Invalid AES key size: " + size);
 		}
-		this.keySize = keySize;
+		this.currentKeyBits = size;
 	}
 
-	// =========================
-	// SET MODE + PADDING
-	// =========================
 	@Override
 	public void setTransformation(String mode, String padding) {
-		if (mode == null || mode.isEmpty()) {
-			this.transformation = this.algorithm;
-		} else if (mode.equalsIgnoreCase("GCM")) {
-			this.transformation = this.algorithm + "/GCM/NoPadding";
-		} else if (padding == null || padding.isEmpty()) {
-			this.transformation = this.algorithm + "/" + mode + "/PKCS5Padding";
+		StringBuilder sb = new StringBuilder(baseAlgo);
+
+		if (mode == null || mode.trim().isEmpty()) {
+			this.currentTransform = baseAlgo;
+			return;
+		}
+
+		if ("GCM".equalsIgnoreCase(mode)) {
+			this.currentTransform = "AES/GCM/NoPadding";
 		} else {
-			this.transformation = this.algorithm + "/" + mode + "/" + padding;
+			String finalPadding = (padding == null || padding.isEmpty()) ? "PKCS5Padding" : padding;
+			this.currentTransform = sb.append("/").append(mode).append("/").append(finalPadding).toString();
 		}
 	}
 
-	// =========================
-	// TẠO KHÓA AES
-	// =========================
 	@Override
 	public SecretKey genKey() throws Exception {
-		KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-		keyGenerator.init(keySize, new SecureRandom());
-		key = keyGenerator.generateKey();
-		return key;
+		KeyGenerator kGen = KeyGenerator.getInstance(baseAlgo);
+		kGen.init(this.currentKeyBits, new SecureRandom());
+		this.secretKey = kGen.generateKey();
+		return this.secretKey;
 	}
 
 	@Override
 	public void loadKey(SecretKey key) {
-		this.key = key;
+		this.secretKey = key;
 	}
 
-	// =========================
-	// TẠO IV
-	// =========================
 	@Override
 	public IvParameterSpec genIV() {
-		byte[] ivBytes = new byte[transformation.contains("GCM") ? 12 : 16];
-		new SecureRandom().nextBytes(ivBytes);
-		iv = new IvParameterSpec(ivBytes);
-		return iv;
+		int size = currentTransform.contains("GCM") ? 12 : 16;
+		byte[] randomBytes = new byte[size];
+		new SecureRandom().nextBytes(randomBytes);
+		this.initVector = new IvParameterSpec(randomBytes);
+		return this.initVector;
 	}
 
 	@Override
 	public void loadIV(IvParameterSpec iv) {
-		this.iv = iv;
+		this.initVector = iv;
 	}
 
-	// =========================
-	// KHỞI TẠO CIPHER
-	// =========================
-	private Cipher initCipher(int mode) throws Exception {
-		Cipher cipher = Cipher.getInstance(transformation);
+	private Cipher setupCipher(int opMode) throws Exception {
+		Cipher instance = Cipher.getInstance(currentTransform);
 
-		if (transformation.contains("ECB")) {
-			cipher.init(mode, key);
-		} else if (transformation.contains("GCM")) {
-			if (iv == null) genIV();
-			GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv.getIV());
-			cipher.init(mode, key, gcmSpec);
+		if (currentTransform.contains("/ECB/")) {
+			instance.init(opMode, secretKey);
+		} else if (currentTransform.contains("/GCM/")) {
+			if (initVector == null)
+				genIV();
+			instance.init(opMode, secretKey, new GCMParameterSpec(128, initVector.getIV()));
 		} else {
-			if (iv == null) genIV();
-			cipher.init(mode, key, iv);
+			if (initVector == null)
+				genIV();
+			instance.init(opMode, secretKey, initVector);
 		}
-
-		return cipher;
+		return instance;
 	}
 
-	// =========================
-	// MÃ HÓA TEXT -> BASE64
-	// =========================
 	@Override
-	public String encryptBase64(String plainText) throws Exception {
-		Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-		byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-		return Base64.getEncoder().encodeToString(encrypted);
+	public String encryptBase64(String plain) throws Exception {
+		Cipher c = setupCipher(Cipher.ENCRYPT_MODE);
+		byte[] rawOut = c.doFinal(plain.getBytes(StandardCharsets.UTF_8));
+		return Base64.getEncoder().encodeToString(rawOut);
 	}
 
-	// =========================
-	// GIẢI MÃ BASE64 -> TEXT
-	// =========================
 	@Override
-	public String decryptBase64(String encryptedText) throws Exception {
-		byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
-		Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-		byte[] decrypted = cipher.doFinal(encryptedBytes);
-		return new String(decrypted, StandardCharsets.UTF_8);
+	public String decryptBase64(String cipherText) throws Exception {
+		byte[] rawIn = Base64.getDecoder().decode(cipherText);
+		Cipher c = setupCipher(Cipher.DECRYPT_MODE);
+		return new String(c.doFinal(rawIn), StandardCharsets.UTF_8);
 	}
 
-	// =========================
-	// MÃ HÓA / GIẢI MÃ FILE
-	// =========================
 	@Override
-	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		if (encrypt) {
-			// ── ENCRYPT: ghi IV vào đầu file, rồi ghi ciphertext ──────
-			try (
-				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
-				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
-			) {
-				if (!transformation.contains("ECB")) {
-					genIV();
-					bos.write(iv.getIV());
-				}
-				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-				byte[] buffer = new byte[4096];
-				int n;
-				while ((n = bis.read(buffer)) != -1) {
-					byte[] chunk = cipher.update(buffer, 0, n);
-					if (chunk != null) bos.write(chunk);
-				}
-				byte[] finalOut = cipher.doFinal();
-				if (finalOut != null) bos.write(finalOut);
-			}
+	public boolean processFile(String src, String target, boolean isEncrypt) throws Exception {
+		if (isEncrypt) {
+			return performEncryption(new File(src), new File(target));
 		} else {
-			// ── DECRYPT: đọc IV từ file nguồn, ghi plaintext ra destFile ──
-			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
-				// Đọc IV (trừ ECB)
-				if (!transformation.contains("ECB")) {
-					int ivLen = transformation.contains("GCM") ? 12 : 16;
-					byte[] ivBytes = new byte[ivLen];
-					int total = 0;
-					while (total < ivLen) {
-						int n = bis.read(ivBytes, total, ivLen - total);
-						if (n == -1) throw new Exception("File bị hỏng: không đọc được IV.");
-						total += n;
-					}
-					iv = new IvParameterSpec(ivBytes);
-				}
+			return performDecryption(new File(src), new File(target));
+		}
+	}
 
-				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-				try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile))) {
-					byte[] buffer = new byte[4096];
-					int n;
-					while ((n = bis.read(buffer)) != -1) {
-						byte[] chunk = cipher.update(buffer, 0, n);
-						if (chunk != null) out.write(chunk);
-					}
-					byte[] finalOut = cipher.doFinal();
-					if (finalOut != null) out.write(finalOut);
+	private boolean performEncryption(File source, File destination) throws Exception {
+		try (InputStream in = new BufferedInputStream(new FileInputStream(source));
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
+
+			if (!currentTransform.contains("ECB")) {
+				genIV();
+				out.write(initVector.getIV()); 
+			}
+
+			Cipher cipher = setupCipher(Cipher.ENCRYPT_MODE);
+			processStream(in, out, cipher);
+		}
+		return true;
+	}
+
+	private boolean performDecryption(File source, File destination) throws Exception {
+		try (InputStream in = new BufferedInputStream(new FileInputStream(source))) {
+
+			if (!currentTransform.contains("ECB")) {
+				int expectedIvSize = currentTransform.contains("GCM") ? 12 : 16;
+				byte[] ivHeader = new byte[expectedIvSize];
+				if (in.read(ivHeader) < expectedIvSize) {
+					throw new IOException("Invalid file header: Missing IV");
 				}
+				this.initVector = new IvParameterSpec(ivHeader);
+			}
+
+			Cipher cipher = setupCipher(Cipher.DECRYPT_MODE);
+			try (OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
+				processStream(in, out, cipher);
 			}
 		}
 		return true;
 	}
 
-	// =========================
-	// GETTER THÔNG TIN
-	// =========================
+	private void processStream(InputStream is, OutputStream os, Cipher c) throws Exception {
+		byte[] buffer = new byte[8192];
+		int bytesRead;
+		while ((bytesRead = is.read(buffer)) != -1) {
+			byte[] output = c.update(buffer, 0, bytesRead);
+			if (output != null)
+				os.write(output);
+		}
+		byte[] finalBlock = c.doFinal();
+		if (finalBlock != null)
+			os.write(finalBlock);
+		os.flush();
+	}
+
 	public String getTransformation() {
-		return transformation;
+		return currentTransform;
 	}
 
 	public int getKeySize() {
-		return keySize;
+		return currentKeyBits;
 	}
 }

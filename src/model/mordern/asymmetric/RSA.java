@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 
 public class RSA {
-/// Trừ file thì kiến trúc OK -- RSA -- Băm -- xong 
 /// 
 	KeyPair keyPair;
     PrivateKey privateKey;

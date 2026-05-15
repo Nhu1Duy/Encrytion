@@ -6,69 +6,85 @@ import util.FileManager;
 
 import javax.swing.*;
 import java.io.File;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-/**
- * Xử lý sự kiện Hash File:
- *   - Mở file chooser chọn file nguồn
- *   - Tính hash của file bằng thuật toán đang chọn
- *   - Ghi kết quả hex ra outputArea
- *   - (Tuỳ chọn) Lưu kết quả hash ra file .txt
- */
-public class HashFileController {
+public class HashFileController implements ActionListener {
 
     private final AppContext ctx;
-    private final HashActionController actionController;
+    private final HashActionController action;
 
-    public HashFileController(AppContext ctx, HashActionController actionController) {
+    public HashFileController(AppContext ctx, HashActionController action) {
         this.ctx = ctx;
-        this.actionController = actionController;
+        this.action = action;
     }
 
     public void bind() {
-        ctx.view.hashPanel.getConfigPanel()
-                .getHashFileBtn()
-                .addActionListener(e -> handleHashFile());
-
-        // Gắn vào menu Save Output (dùng chung FileManager)
-        ctx.view.itemSaveOutput.addActionListener(e -> {
-            if (ctx.isHashMode()) saveOutput();
+        ctx.view.hashPanel.getConfigPanel().getHashFileBtn().addActionListener(this);
+        
+        ctx.view.itemSaveOutput.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (ctx.isHashMode()) {
+                    executeSaveResult();
+                }
+            }
         });
     }
 
-    // ── Hash File ─────────────────────────────────────────────────────────────
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        performHashProcess();
+    }
 
-    private void handleHashFile() {
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Chọn file cần tính hash");
-        fc.setAcceptAllFileFilterUsed(true);
+    private void performHashProcess() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Hệ thống: Chọn file cần tính mã băm");
+        
+        int resultState = chooser.showOpenDialog(ctx.view.frame);
+        if (resultState != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
 
-        if (fc.showOpenDialog(ctx.view.frame) != JFileChooser.APPROVE_OPTION) return;
-
-        File file = fc.getSelectedFile();
-        String filePath = file.getAbsolutePath();
+        File targetFile = chooser.getSelectedFile();
+        if (targetFile == null || !targetFile.exists()) {
+            return;
+        }
 
         try {
-            HashFunction hashFn = actionController.resolveHashFunction();
-            String result = hashFn.hashFile(filePath);
+            HashFunction hashFunc = action.resolveHashFunction();
+            String absolutePath = targetFile.getAbsolutePath();
+            
+            String hashValue = hashFunc.hashFile(absolutePath);
 
-            ctx.view.ioPanel.getInputArea().setText("[FILE] " + filePath);
-            ctx.view.ioPanel.getOutputArea().setText(result);
-            ctx.view.setStatus("Hash File OK – " + ctx.view.hashPanel.getCurrentAlgo()
-                    + " | " + file.getName());
+            ctx.view.ioPanel.getInputArea().setText("[PATH]: " + absolutePath);
+            ctx.view.ioPanel.getOutputArea().setText(hashValue);
 
+            String algorithmName = ctx.view.hashPanel.getCurrentAlgo();
+            String statusMsg = String.format("Hash OK - %s | %s", algorithmName, targetFile.getName());
+            
+            ctx.view.setStatus(statusMsg);
+            JOptionPane.showMessageDialog(ctx.view.frame, "Tính toán mã băm hoàn tất!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            
         } catch (Exception ex) {
-            ctx.showError("Lỗi hash file:\n" + ex.getMessage());
+            ex.printStackTrace(); 
+            ctx.showError("Phát sinh lỗi trong quá trình hash file:\n" + ex.getMessage());
         }
     }
 
-    // ── Save Output ───────────────────────────────────────────────────────────
-
-    private void saveOutput() {
-        String output = ctx.view.ioPanel.getOutputArea().getText().trim();
-        if (output.isEmpty()) {
-            ctx.showError("Chưa có kết quả hash để lưu.");
+    private void executeSaveResult() {
+        String outputText = ctx.view.ioPanel.getOutputArea().getText();
+        
+        if (outputText == null || outputText.trim().isEmpty()) {
+            ctx.showError("Không tìm thấy dữ liệu băm để thực hiện lưu trữ.");
             return;
         }
-        FileManager.saveText(ctx.view.frame, output);
+
+        try {
+            FileManager.saveText(ctx.view.frame, outputText.trim());
+            System.out.println("save clicked");
+        } catch (Exception ex) {
+            ctx.showError("Lỗi khi ghi tệp: " + ex.getMessage());
+        }
     }
 }

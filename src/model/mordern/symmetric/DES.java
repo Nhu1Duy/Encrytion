@@ -4,166 +4,144 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
 public class DES implements SymmetricCipher {
 
-	private SecretKey key;
-	private IvParameterSpec iv;
-	private String algorithm = "DES";
-	private String transformation = "DES/CBC/PKCS5Padding";
+	private SecretKey secretKey;
+	private IvParameterSpec initVector;
+	private final String algoName = "DES";
+	private String transformConfig = "DES/CBC/PKCS5Padding";
+	private final int bitLength = 56;
 
-	private int keySize = 56;
-
-	// =========================
-	// SET MODE + PADDING
-	// =========================
 	@Override
 	public void setTransformation(String mode, String padding) {
-		if (mode.isEmpty() || padding.isEmpty()) {
-			this.transformation = this.algorithm;
+		if (mode == null || mode.isEmpty() || padding == null || padding.isEmpty()) {
+			this.transformConfig = algoName;
 		} else {
-			this.transformation = this.algorithm + "/" + mode + "/" + padding;
+			StringBuilder builder = new StringBuilder();
+			this.transformConfig = builder.append(algoName).append("/").append(mode).append("/").append(padding)
+					.toString();
 		}
 	}
 
-	// =========================
-	// TẠO KHÓA DES
-	// =========================
 	@Override
 	public SecretKey genKey() throws Exception {
-		KeyGenerator keyGenerator = KeyGenerator.getInstance("DES");
-		keyGenerator.init(keySize, new SecureRandom());
-		key = keyGenerator.generateKey();
-		return key;
+		KeyGenerator kg = KeyGenerator.getInstance(algoName);
+		kg.init(bitLength, new SecureRandom());
+		this.secretKey = kg.generateKey();
+		return this.secretKey;
 	}
 
 	@Override
-	public void loadKey(SecretKey key) {
-		this.key = key;
-	}
-
-	// =========================
-	// TẠO IV
-	// =========================
-	@Override
-	public IvParameterSpec genIV() {
-		byte[] ivBytes = new byte[8];
-		new SecureRandom().nextBytes(ivBytes);
-		iv = new IvParameterSpec(ivBytes);
-		return iv;
+	public void loadKey(SecretKey k) {
+		this.secretKey = k;
 	}
 
 	@Override
-	public void loadIV(IvParameterSpec iv) {
-		this.iv = iv;
+	public IvParameterSpec genIV() {
+		byte[] raw = new byte[8];
+		new SecureRandom().nextBytes(raw);
+		this.initVector = new IvParameterSpec(raw);
+		return this.initVector;
 	}
 
-	// =========================
-	// KHỞI TẠO CIPHER
-	// =========================
-	private Cipher initCipher(int mode) throws Exception {
-		Cipher cipher = Cipher.getInstance(transformation);
+	@Override
+	public void loadIV(IvParameterSpec ivSpec) {
+		this.initVector = ivSpec;
+	}
 
-		if (transformation.equals("ARCFOUR") || transformation.contains("ECB")) {
-			cipher.init(mode, key);
+	private Cipher getCipherInstance(int opMode) throws Exception {
+		Cipher instance = Cipher.getInstance(transformConfig);
+		if (transformConfig.equals("ARCFOUR") || transformConfig.contains("/ECB/")) {
+			instance.init(opMode, secretKey);
 		} else {
-			if (iv == null) genIV();
-			cipher.init(mode, key, iv);
+			if (this.initVector == null)
+				genIV();
+			instance.init(opMode, secretKey, initVector);
 		}
-
-		return cipher;
+		return instance;
 	}
 
-	// =========================
-	// MÃ HÓA TEXT -> BASE64
-	// =========================
 	@Override
-	public String encryptBase64(String plainText) throws Exception {
-		Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-		byte[] data = plainText.getBytes(StandardCharsets.UTF_8);
-		byte[] encrypted = cipher.doFinal(data);
-		return Base64.getEncoder().encodeToString(encrypted);
+	public String encryptBase64(String input) throws Exception {
+		Cipher c = getCipherInstance(Cipher.ENCRYPT_MODE);
+		byte[] rawOutput = c.doFinal(input.getBytes(StandardCharsets.UTF_8));
+		return Base64.getEncoder().encodeToString(rawOutput);
 	}
 
-	// =========================
-	// GIẢI MÃ BASE64 -> TEXT
-	// =========================
 	@Override
-	public String decryptBase64(String encryptedText) throws Exception {
-		byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
-		Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-		byte[] decrypted = cipher.doFinal(encryptedBytes);
-		return new String(decrypted, StandardCharsets.UTF_8);
+	public String decryptBase64(String encoded) throws Exception {
+		byte[] rawInput = Base64.getDecoder().decode(encoded);
+		Cipher c = getCipherInstance(Cipher.DECRYPT_MODE);
+		return new String(c.doFinal(rawInput), StandardCharsets.UTF_8);
 	}
 
-	// =========================
-	// MÃ HÓA / GIẢI MÃ FILE
-	// =========================
 	@Override
-	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		if (encrypt) {
-			try (
-				BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
-				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
-			) {
-				if (!transformation.contains("ECB")) {
-					genIV();
-					bos.write(iv.getIV());
-				}
-				Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-				byte[] buffer = new byte[4096];
-				int n;
-				while ((n = bis.read(buffer)) != -1) {
-					byte[] chunk = cipher.update(buffer, 0, n);
-					if (chunk != null) bos.write(chunk);
-				}
-				byte[] finalOut = cipher.doFinal();
-				if (finalOut != null) bos.write(finalOut);
-			}
+	public boolean processFile(String srcPath, String destPath, boolean encryptMode) throws Exception {
+		File inputFile = new File(srcPath);
+		File outputFile = new File(destPath);
+
+		if (encryptMode) {
+			executeFileEncryption(inputFile, outputFile);
 		} else {
-			try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile))) {
-				if (!transformation.contains("ECB")) {
-					byte[] ivBytes = new byte[8];
-					int total = 0;
-					while (total < 8) {
-						int n = bis.read(ivBytes, total, 8 - total);
-						if (n == -1) throw new Exception("File bị hỏng: không đọc được IV.");
-						total += n;
-					}
-					iv = new IvParameterSpec(ivBytes);
-				}
-
-				Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-				try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile))) {
-					byte[] buffer = new byte[4096];
-					int n;
-					while ((n = bis.read(buffer)) != -1) {
-						byte[] chunk = cipher.update(buffer, 0, n);
-						if (chunk != null) out.write(chunk);
-					}
-					byte[] finalOut = cipher.doFinal();
-					if (finalOut != null) out.write(finalOut);
-				}
-			}
+			executeFileDecryption(inputFile, outputFile);
 		}
 		return true;
 	}
 
-	// =========================
-	// GETTER THÔNG TIN
-	// =========================
+	private void executeFileEncryption(File input, File output) throws Exception {
+		try (InputStream is = new BufferedInputStream(new FileInputStream(input));
+				OutputStream os = new BufferedOutputStream(new FileOutputStream(output))) {
+
+			if (!transformConfig.contains("/ECB/")) {
+				genIV();
+				os.write(initVector.getIV());
+			}
+
+			Cipher cipher = getCipherInstance(Cipher.ENCRYPT_MODE);
+			transferData(is, os, cipher);
+		}
+	}
+
+	private void executeFileDecryption(File input, File output) throws Exception {
+		try (InputStream is = new BufferedInputStream(new FileInputStream(input))) {
+			if (!transformConfig.contains("/ECB/")) {
+				byte[] ivHeader = new byte[8];
+				if (is.read(ivHeader) < 8)
+					throw new IOException("Invalid DES file header");
+				this.initVector = new IvParameterSpec(ivHeader);
+			}
+
+			Cipher cipher = getCipherInstance(Cipher.DECRYPT_MODE);
+			try (OutputStream os = new BufferedOutputStream(new FileOutputStream(output))) {
+				transferData(is, os, cipher);
+			}
+		}
+	}
+
+	private void transferData(InputStream in, OutputStream out, Cipher c) throws Exception {
+		byte[] dataBuffer = new byte[8192];
+		int readCount;
+		while ((readCount = in.read(dataBuffer)) != -1) {
+			byte[] processed = c.update(dataBuffer, 0, readCount);
+			if (processed != null)
+				out.write(processed);
+		}
+		byte[] finalBlock = c.doFinal();
+		if (finalBlock != null)
+			out.write(finalBlock);
+		out.flush();
+	}
+
 	public String getTransformation() {
-		return transformation;
+		return transformConfig;
 	}
 
 	public int getKeySize() {
-		return keySize;
+		return bitLength;
 	}
 }

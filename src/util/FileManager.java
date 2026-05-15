@@ -41,11 +41,61 @@ public class FileManager {
         return writeFile(parent, file, content);
     }
 
-  
-    private static File chooseOpenFile(Component parent, String desc, String[] extensions) {
-        JFileChooser fc = buildChooser(desc, extensions);
+    /**
+     * Mở dialog chọn file bất kỳ (không filter định dạng)
+     */
+    public static File chooseOpenFile(Component parent, String desc, String[] extensions) {
+        JFileChooser fc = new JFileChooser();
+        
+        if (extensions != null && extensions.length > 0) {
+            fc.setAcceptAllFileFilterUsed(false);
+            fc.addChoosableFileFilter(new FileNameExtensionFilter(desc, extensions));
+        } else {
+            fc.setAcceptAllFileFilterUsed(true);
+        }
+        
         int result = fc.showOpenDialog(parent);
         return result == JFileChooser.APPROVE_OPTION ? fc.getSelectedFile() : null;
+    }
+
+    /**
+     * Mở dialog chọn thư mục
+     */
+    public static File chooseDirectory(Component parent, File initialDirectory) {
+        JFileChooser fc = new JFileChooser();
+        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fc.setDialogTitle("Chọn thư mục lưu file output");
+        
+        if (initialDirectory != null && initialDirectory.exists()) {
+            fc.setCurrentDirectory(initialDirectory);
+        }
+        
+        int result = fc.showOpenDialog(parent);
+        return result == JFileChooser.APPROVE_OPTION ? fc.getSelectedFile() : null;
+    }
+
+    /**
+     * Tạo tên file output dựa trên tên file input
+     * Nếu file input kết thúc bằng ".enc" thì bỏ extension
+     * Ngược lại thêm ".enc" vào cuối
+     */
+    public static String generateOutputFileName(String inputFilePath) {
+        if (inputFilePath == null || inputFilePath.trim().isEmpty()) {
+            return "output.enc";
+        }
+        
+        String inputName = new File(inputFilePath).getName();
+        return inputName.endsWith(".enc") ? 
+            inputName.substring(0, inputName.length() - 4) : 
+            inputName + ".enc";
+    }
+
+    /**
+     * Tạo đường dẫn output đầy đủ
+     */
+    public static String buildOutputPath(String directory, String inputFilePath) {
+        String outputFileName = generateOutputFileName(inputFilePath);
+        return directory + File.separator + outputFileName;
     }
 
     private static File chooseSaveFile(Component parent, String desc, String[] extensions, String defaultName) {

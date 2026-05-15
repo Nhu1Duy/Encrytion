@@ -4,136 +4,105 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
 public class RC4 implements SymmetricCipher {
 
-	private SecretKey key;
-	private String algorithm = "ARCFOUR";
-	private String transformation = "ARCFOUR";
+    private SecretKey secretKey;
+    private final String engineName = "ARCFOUR";
+    private final String config = "ARCFOUR";
+    private int bitLen = 128;
 
-	/**
-	 * RC4 là stream cipher → KHÔNG có IV, KHÔNG có padding, KHÔNG có mode.
-	 *
-	 * KEY SIZE hỗ trợ: 40 – 1024 bit (bội số của 8)
-	 */
-	private int keySize = 128;
+    public void setKeySize(int val) {
+        if (val < 40 || val > 1024 || val % 8 != 0) {
+            throw new IllegalArgumentException("Key size error");
+        }
+        this.bitLen = val;
+    }
 
-	// =========================
-	// CHỌN KEY SIZE
-	// =========================
-	public void setKeySize(int keySize) {
-		if (keySize < 40 || keySize > 1024 || keySize % 8 != 0) {
-			throw new IllegalArgumentException("RC4 key size phải trong khoảng 40–1024 bit và là bội số của 8.");
-		}
-		this.keySize = keySize;
-	}
+    @Override
+    public void setTransformation(String m, String p) {
+    }
 
-	// =========================
-	// SET MODE + PADDING
-	// =========================
-	@Override
-	public void setTransformation(String mode, String padding) {
-		System.out.println("[RC4] setTransformation() bị bỏ qua: RC4 chỉ hỗ trợ ARCFOUR.");
-	}
+    @Override
+    public SecretKey genKey() throws Exception {
+        KeyGenerator generator = KeyGenerator.getInstance(engineName);
+        generator.init(bitLen, new SecureRandom());
+        this.secretKey = generator.generateKey();
+        return this.secretKey;
+    }
 
-	// =========================
-	// TẠO KHÓA
-	// =========================
-	@Override
-	public SecretKey genKey() throws Exception {
-		KeyGenerator keyGenerator = KeyGenerator.getInstance("ARCFOUR");
-		keyGenerator.init(keySize, new SecureRandom());
-		key = keyGenerator.generateKey();
-		return key;
-	}
+    @Override
+    public void loadKey(SecretKey k) {
+        this.secretKey = k;
+    }
 
-	@Override
-	public void loadKey(SecretKey key) {
-		this.key = key;
-	}
+    @Override
+    public IvParameterSpec genIV() {
+        return null;
+    }
 
-	// =========================
-	// IV
-	// =========================
-	@Override
-	public IvParameterSpec genIV() {
-		System.out.println("[RC4] genIV() bị bỏ qua: RC4 là stream cipher, không dùng IV.");
-		return null;
-	}
+    @Override
+    public void loadIV(IvParameterSpec iv) {
+    }
 
-	@Override
-	public void loadIV(IvParameterSpec iv) {
-		System.out.println("[RC4] loadIV() bị bỏ qua: RC4 là stream cipher, không dùng IV.");
-	}
+    private Cipher getCipher(int mode) throws Exception {
+        Cipher c = Cipher.getInstance(config);
+        c.init(mode, secretKey);
+        return c;
+    }
 
-	// =========================
-	// KHỞI TẠO CIPHER
-	// =========================
-	private Cipher initCipher(int mode) throws Exception {
-		Cipher cipher = Cipher.getInstance(transformation);
-		cipher.init(mode, key);
-		return cipher;
-	}
+    @Override
+    public String encryptBase64(String input) throws Exception {
+        byte[] rawOut = getCipher(Cipher.ENCRYPT_MODE).doFinal(input.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(rawOut);
+    }
 
-	// =========================
-	// MÃ HÓA TEXT -> BASE64
-	// =========================
-	@Override
-	public String encryptBase64(String plainText) throws Exception {
-		Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-		byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-		return Base64.getEncoder().encodeToString(encrypted);
-	}
+    @Override
+    public String decryptBase64(String base64Str) throws Exception {
+        byte[] rawIn = Base64.getDecoder().decode(base64Str);
+        byte[] origin = getCipher(Cipher.DECRYPT_MODE).doFinal(rawIn);
+        return new String(origin, StandardCharsets.UTF_8);
+    }
 
-	// =========================
-	// GIẢI MÃ BASE64 -> TEXT
-	// =========================
-	@Override
-	public String decryptBase64(String encryptedText) throws Exception {
-		byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
-		Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
-		byte[] decrypted = cipher.doFinal(encryptedBytes);
-		return new String(decrypted, StandardCharsets.UTF_8);
-	}
+    @Override
+    public boolean processFile(String src, String target, boolean isEncrypt) throws Exception {
+        File fIn = new File(src);
+        File fOut = new File(target);
+        
+        try (InputStream input = new BufferedInputStream(new FileInputStream(fIn));
+             OutputStream output = new BufferedOutputStream(new FileOutputStream(fOut))) {
+            
+            Cipher cipher = getCipher(isEncrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE);
+            executeStream(input, output, cipher);
+        }
+        return true;
+    }
 
-	// =========================
-	// MÃ HÓA / GIẢI MÃ FILE
-	// =========================
-	@Override
-	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		// RC4 không có IV, không có header — đọc/ghi thẳng vào destFile
-		try (
-			BufferedInputStream  bis = new BufferedInputStream(new FileInputStream(sourceFile));
-			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))
-		) {
-			Cipher cipher = initCipher(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE);
-			byte[] buffer = new byte[4096];
-			int n;
-			while ((n = bis.read(buffer)) != -1) {
-				byte[] chunk = cipher.update(buffer, 0, n);
-				if (chunk != null) bos.write(chunk);
-			}
-			byte[] finalOut = cipher.doFinal();
-			if (finalOut != null) bos.write(finalOut);
-		}
-		return true;
-	}
+    private void executeStream(InputStream is, OutputStream os, Cipher c) throws Exception {
+        byte[] cache = new byte[8192];
+        int read;
+        while ((read = is.read(cache)) != -1) {
+            byte[] processed = c.update(cache, 0, read);
+            if (processed != null) {
+                os.write(processed);
+            }
+        }
+        byte[] last = c.doFinal();
+        if (last != null) {
+            os.write(last);
+        }
+        os.flush();
+    }
 
-	// =========================
-	// GETTER THÔNG TIN
-	// =========================
-	public String getTransformation() {
-		return transformation;
-	}
+    public String getTransformation() {
+        return config;
+    }
 
-	public int getKeySize() {
-		return keySize;
-	}
+    public int getKeySize() {
+        return bitLen;
+    }
 }
