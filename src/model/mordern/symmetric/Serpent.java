@@ -18,22 +18,25 @@ public class Serpent implements SymmetricCipher {
 	private int currentKeyBits = 256;
 
 	public void setKeySize(int size) {
+
 		boolean isValid = (size == 128 || size == 192 || size == 256);
+
 		if (!isValid) {
-			throw new IllegalArgumentException("Sai Keysize: +" + size + ". Phải là 128, 192, hoặc 256 bits.");
+			throw new IllegalArgumentException(
+					"Sai kích thước key: " + size + ". Chỉ chấp nhận 128, 192 hoặc 256 bits!");
 		}
 		this.currentKeyBits = size;
 	}
 
 	@Override
 	public void setTransformation(String mode, String padding) {
+
 		StringBuilder sb = new StringBuilder(baseAlgo);
 
 		if (mode == null || mode.trim().isEmpty()) {
 			this.currentTransform = baseAlgo;
 			return;
 		}
-
 		String finalPadding = (padding == null || padding.isEmpty()) ? "PKCS5Padding" : padding;
 		this.currentTransform = sb.append("/").append(mode).append("/").append(finalPadding).toString();
 	}
@@ -53,13 +56,12 @@ public class Serpent implements SymmetricCipher {
 
 	@Override
 	public IvParameterSpec genIV() {
-		int size = 16;
-		byte[] randomBytes = new byte[size];
+		byte[] randomBytes = new byte[16];
 		new SecureRandom().nextBytes(randomBytes);
 		this.initVector = new IvParameterSpec(randomBytes);
 		return this.initVector;
 	}
-	
+
 	@Override
 	public void loadIV(IvParameterSpec iv) {
 		this.initVector = iv;
@@ -67,7 +69,6 @@ public class Serpent implements SymmetricCipher {
 
 	private Cipher setupCipher(int opMode) throws Exception {
 		Cipher instance = Cipher.getInstance(currentTransform);
-
 		if (currentTransform.contains("/ECB/")) {
 			instance.init(opMode, secretKey);
 		} else {
@@ -76,6 +77,7 @@ public class Serpent implements SymmetricCipher {
 			}
 			instance.init(opMode, secretKey, initVector);
 		}
+
 		return instance;
 	}
 
@@ -83,6 +85,7 @@ public class Serpent implements SymmetricCipher {
 	public String encryptBase64(String plain) throws Exception {
 		Cipher c = setupCipher(Cipher.ENCRYPT_MODE);
 		byte[] rawOut = c.doFinal(plain.getBytes(StandardCharsets.UTF_8));
+
 		return Base64.getEncoder().encodeToString(rawOut);
 	}
 
@@ -90,6 +93,7 @@ public class Serpent implements SymmetricCipher {
 	public String decryptBase64(String cipherText) throws Exception {
 		byte[] rawIn = Base64.getDecoder().decode(cipherText);
 		Cipher c = setupCipher(Cipher.DECRYPT_MODE);
+
 		return new String(c.doFinal(rawIn), StandardCharsets.UTF_8);
 	}
 
@@ -114,17 +118,17 @@ public class Serpent implements SymmetricCipher {
 			Cipher cipher = setupCipher(Cipher.ENCRYPT_MODE);
 			processStream(in, out, cipher);
 		}
+
 		return true;
 	}
 
 	private boolean performDecryption(File source, File destination) throws Exception {
 		try (InputStream in = new BufferedInputStream(new FileInputStream(source))) {
-
 			if (!currentTransform.contains("ECB")) {
-				int expectedIvSize = 16; 
+				int expectedIvSize = 16;
 				byte[] ivHeader = new byte[expectedIvSize];
 				if (in.read(ivHeader) < expectedIvSize) {
-					throw new IOException("Invalid file header: Missing IV");
+					throw new IOException("File không hợp lệ: thiếu IV!");
 				}
 				this.initVector = new IvParameterSpec(ivHeader);
 			}
@@ -134,22 +138,28 @@ public class Serpent implements SymmetricCipher {
 				processStream(in, out, cipher);
 			}
 		}
+
 		return true;
 	}
 
 	private void processStream(InputStream is, OutputStream os, Cipher c) throws Exception {
 		byte[] buffer = new byte[8192];
 		int bytesRead;
+
 		while ((bytesRead = is.read(buffer)) != -1) {
+
 			byte[] output = c.update(buffer, 0, bytesRead);
+
 			if (output != null) {
 				os.write(output);
 			}
 		}
 		byte[] finalBlock = c.doFinal();
+
 		if (finalBlock != null) {
 			os.write(finalBlock);
 		}
+
 		os.flush();
 	}
 

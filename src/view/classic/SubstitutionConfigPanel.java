@@ -2,9 +2,11 @@ package view.classic;
 
 import javax.swing.*;
 
+import util.FormatButton;
 import view.shared.KeyPanel;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 public class SubstitutionConfigPanel extends JPanel implements KeyPanel {
 	private JTextArea keyArea;
@@ -19,6 +21,7 @@ public class SubstitutionConfigPanel extends JPanel implements KeyPanel {
 		keyArea.setText("Tạo key của bạn");
 
 		genBtn = new JButton("Tạo Key Ngẫu Nhiên");
+		FormatButton.formatButton(genBtn, new Color(33, 37, 41) );
 
 		add(new JScrollPane(keyArea), BorderLayout.CENTER);
 		add(genBtn, BorderLayout.SOUTH);

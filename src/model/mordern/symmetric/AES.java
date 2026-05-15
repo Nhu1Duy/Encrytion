@@ -20,16 +20,17 @@ public class AES implements SymmetricCipher {
 
 	public void setKeySize(int size) {
 		boolean isValid = (size == 128 || size == 192 || size == 256);
+
 		if (!isValid) {
-			throw new IllegalArgumentException("Invalid AES key size: " + size);
+			throw new IllegalArgumentException("Sai kích thước key AES: " + size + ". Chỉ chấp nhận 128, 192 hoặc 256 bits!");
 		}
+
 		this.currentKeyBits = size;
 	}
 
 	@Override
 	public void setTransformation(String mode, String padding) {
 		StringBuilder sb = new StringBuilder(baseAlgo);
-
 		if (mode == null || mode.trim().isEmpty()) {
 			this.currentTransform = baseAlgo;
 			return;
@@ -62,6 +63,7 @@ public class AES implements SymmetricCipher {
 		byte[] randomBytes = new byte[size];
 		new SecureRandom().nextBytes(randomBytes);
 		this.initVector = new IvParameterSpec(randomBytes);
+
 		return this.initVector;
 	}
 
@@ -72,18 +74,23 @@ public class AES implements SymmetricCipher {
 
 	private Cipher setupCipher(int opMode) throws Exception {
 		Cipher instance = Cipher.getInstance(currentTransform);
-
 		if (currentTransform.contains("/ECB/")) {
 			instance.init(opMode, secretKey);
+
 		} else if (currentTransform.contains("/GCM/")) {
-			if (initVector == null)
+			if (initVector == null) {
 				genIV();
+			}
+
 			instance.init(opMode, secretKey, new GCMParameterSpec(128, initVector.getIV()));
 		} else {
-			if (initVector == null)
+
+			if (initVector == null) {
 				genIV();
+			}
 			instance.init(opMode, secretKey, initVector);
 		}
+
 		return instance;
 	}
 
@@ -113,26 +120,24 @@ public class AES implements SymmetricCipher {
 	private boolean performEncryption(File source, File destination) throws Exception {
 		try (InputStream in = new BufferedInputStream(new FileInputStream(source));
 				OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
-
 			if (!currentTransform.contains("ECB")) {
 				genIV();
-				out.write(initVector.getIV()); 
+				out.write(initVector.getIV());
 			}
-
 			Cipher cipher = setupCipher(Cipher.ENCRYPT_MODE);
 			processStream(in, out, cipher);
 		}
+
 		return true;
 	}
 
 	private boolean performDecryption(File source, File destination) throws Exception {
 		try (InputStream in = new BufferedInputStream(new FileInputStream(source))) {
-
 			if (!currentTransform.contains("ECB")) {
 				int expectedIvSize = currentTransform.contains("GCM") ? 12 : 16;
 				byte[] ivHeader = new byte[expectedIvSize];
 				if (in.read(ivHeader) < expectedIvSize) {
-					throw new IOException("Invalid file header: Missing IV");
+					throw new IOException("File AES không hợp lệ: thiếu IV!");
 				}
 				this.initVector = new IvParameterSpec(ivHeader);
 			}
@@ -142,6 +147,7 @@ public class AES implements SymmetricCipher {
 				processStream(in, out, cipher);
 			}
 		}
+
 		return true;
 	}
 
@@ -150,12 +156,16 @@ public class AES implements SymmetricCipher {
 		int bytesRead;
 		while ((bytesRead = is.read(buffer)) != -1) {
 			byte[] output = c.update(buffer, 0, bytesRead);
-			if (output != null)
+			if (output != null) {
 				os.write(output);
+			}
 		}
 		byte[] finalBlock = c.doFinal();
-		if (finalBlock != null)
+
+		if (finalBlock != null) {
 			os.write(finalBlock);
+		}
+
 		os.flush();
 	}
 

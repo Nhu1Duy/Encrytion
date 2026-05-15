@@ -2,6 +2,7 @@ package view.classic;
 
 import javax.swing.*;
 
+import util.FormatButton;
 import view.shared.KeyPanel;
 
 import java.awt.*;
@@ -17,6 +18,7 @@ public class HillConfigPanel extends JPanel implements KeyPanel {
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
         sizeField = new JTextField("2", 3);
         genBtn    = new JButton("Gen Key");
+		FormatButton.formatButton(genBtn, new Color(33, 37, 41) );
 
         topRow.add(new JLabel("Cỡ ma trận (n):"));
         topRow.add(sizeField);

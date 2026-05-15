@@ -2,8 +2,10 @@ package view.classic;
 
 import javax.swing.*;
 
+import util.FormatButton;
 import view.shared.KeyPanel;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 
 public class AffineConfigPanel extends JPanel implements KeyPanel {
@@ -15,7 +17,7 @@ public class AffineConfigPanel extends JPanel implements KeyPanel {
 		keyA = new JTextField(3);
 		keyB = new JTextField(3);
 		genBtn = new JButton("Gen Key");
-
+		FormatButton.formatButton(genBtn, new Color(33, 37, 41) );
 		add(new JLabel("Hệ số a:"));
 		add(keyA);
 		add(new JLabel("Hệ số b:"));

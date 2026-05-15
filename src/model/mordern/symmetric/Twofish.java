@@ -8,39 +8,39 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
- 
 
-public class Twofish implements SymmetricCipher{
-	
+public class Twofish implements SymmetricCipher {
+
 	private SecretKey secretKey;
 	private IvParameterSpec initVector;
 	private String baseAlgo = "Twofish";
 	private String currentTransform = "Twofish/CBC/PKCS5Padding";
 	private int currentKeyBits = 256;
-	
+
 	public void setKeySize(int size) {
-		boolean isValid = (size ==128 || size == 192 || size == 256);
-		if(!isValid) {
-			throw new IllegalArgumentException("Sai Keysize: +" + size + ". Phải là 128, 192, hoặc 256 bits.");
-			
+
+		boolean isValid = (size == 128 || size == 192 || size == 256);
+
+		if (!isValid) {
+			throw new IllegalArgumentException("Sai kích thước key: " + size + ". Chỉ chấp nhận 128, 192 hoặc 256 bits!");
 		}
 		this.currentKeyBits = size;
 	}
-	
+
 	@Override
 	public void setTransformation(String mode, String padding) {
 		StringBuilder sb = new StringBuilder(baseAlgo);
-		if(mode == null || mode.trim().isEmpty()) {
+		if (mode == null || mode.trim().isEmpty()) {
 			this.currentTransform = baseAlgo;
 			return;
 		}
 		String finalPadding;
-		if(padding == null || padding.isEmpty()) {
+		if (padding == null || padding.isEmpty()) {
 			finalPadding = "PKCS5Padding";
-		}else {
+		} else {
 			finalPadding = padding;
 		}
-		this.currentTransform = sb.toString() + "/" + mode + "/" + finalPadding;
+		this.currentTransform = sb + "/" + mode + "/" + finalPadding;
 	}
 
 	@Override
@@ -54,13 +54,11 @@ public class Twofish implements SymmetricCipher{
 	@Override
 	public void loadKey(SecretKey key) {
 		this.secretKey = key;
-		
 	}
 
 	@Override
 	public IvParameterSpec genIV() {
-		int size = 16;
-		byte[] randomBytes = new byte[size];
+		byte[] randomBytes = new byte[16];
 		new SecureRandom().nextBytes(randomBytes);
 		this.initVector = new IvParameterSpec(randomBytes);
 		return this.initVector;
@@ -69,19 +67,20 @@ public class Twofish implements SymmetricCipher{
 	@Override
 	public void loadIV(IvParameterSpec iv) {
 		this.initVector = iv;
-		
 	}
-	
+
 	private Cipher setupCipher(int opMode) throws Exception {
+
 		Cipher instance = Cipher.getInstance(currentTransform);
-		if(currentTransform.contains("/ECB/")) {
+		if (currentTransform.contains("/ECB/")) {
 			instance.init(opMode, secretKey);
-		}else {
-			if(initVector == null) {
+		} else {
+			if (initVector == null) {
 				genIV();
 			}
 			instance.init(opMode, secretKey, initVector);
 		}
+
 		return instance;
 	}
 
@@ -101,68 +100,74 @@ public class Twofish implements SymmetricCipher{
 
 	@Override
 	public boolean processFile(String sourceFile, String destFile, boolean encrypt) throws Exception {
-		if(encrypt) {
-			return false;
-		}else {
-			return false;
+
+		if (encrypt) {
+			return performEncryption(new File(sourceFile), new File(destFile));
+		} else {
+			return performDecryption(new File(sourceFile), new File(destFile));
 		}
 	}
-	
-	private boolean performEncryption(File source, File destination) throws Exception {
-        try (InputStream in = new BufferedInputStream(new FileInputStream(source));
-             OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
- 
-            if (!currentTransform.contains("ECB")) {
-                genIV();
-                out.write(initVector.getIV());
-            }
- 
-            Cipher cipher = setupCipher(Cipher.ENCRYPT_MODE);
-            processStream(in, out, cipher);
-        }
-        return true;
-    }
- 
-    private boolean performDecryption(File source, File destination) throws Exception {
-        try (InputStream in = new BufferedInputStream(new FileInputStream(source))) {
- 
-            if (!currentTransform.contains("ECB")) {
-                int expectedIvSize = 16; 
-                byte[] ivHeader = new byte[expectedIvSize];
-                if (in.read(ivHeader) < expectedIvSize) {
-                    throw new IOException("Invalid file header: Missing IV");
-                }
-                this.initVector = new IvParameterSpec(ivHeader);
-            }
- 
-            Cipher cipher = setupCipher(Cipher.DECRYPT_MODE);
-            try (OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
-                processStream(in, out, cipher);
-            }
-        }
-        return true;
-    }
-    private void processStream(InputStream is, OutputStream os, Cipher c) throws Exception {
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        while ((bytesRead = is.read(buffer)) != -1) {
-            byte[] output = c.update(buffer, 0, bytesRead);
-            if (output != null) {
-                os.write(output);
-            }
-        }
-        byte[] finalBlock = c.doFinal();
-        if (finalBlock != null) {
-            os.write(finalBlock);
-        }
-        os.flush();
-    }
- 
-    public String getTransformation() {
-        return currentTransform;
-    }
-    public int getKeySize() {
-        return currentKeyBits;
-    }
 
+	private boolean performEncryption(File source, File destination) throws Exception {
+		try (InputStream in = new BufferedInputStream(new FileInputStream(source));
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
+			if (!currentTransform.contains("ECB")) {
+				genIV();
+				out.write(initVector.getIV());
+			}
+
+			Cipher cipher = setupCipher(Cipher.ENCRYPT_MODE);
+			processStream(in, out, cipher);
+		}
+
+		return true;
+	}
+
+	private boolean performDecryption(File source, File destination) throws Exception {
+		try (InputStream in = new BufferedInputStream(new FileInputStream(source))) {
+			if (!currentTransform.contains("ECB")) {
+				byte[] ivHeader = new byte[16];
+				if (in.read(ivHeader) < 16) {
+					throw new IOException("File không hợp lệ: thiếu IV!");
+				}
+
+				this.initVector = new IvParameterSpec(ivHeader);
+			}
+
+			Cipher cipher = setupCipher(Cipher.DECRYPT_MODE);
+			try (OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
+				processStream(in, out, cipher);
+			}
+		}
+
+		return true;
+	}
+
+	private void processStream(InputStream is, OutputStream os, Cipher c) throws Exception {
+
+		byte[] buffer = new byte[8192];
+		int bytesRead;
+		while ((bytesRead = is.read(buffer)) != -1) {
+			byte[] output = c.update(buffer, 0, bytesRead);
+
+			if (output != null) {
+				os.write(output);
+			}
+		}
+
+		byte[] finalBlock = c.doFinal();
+
+		if (finalBlock != null) {
+			os.write(finalBlock);
+		}
+		os.flush();
+	}
+
+	public String getTransformation() {
+		return currentTransform;
+	}
+
+	public int getKeySize() {
+		return currentKeyBits;
+	}
 }

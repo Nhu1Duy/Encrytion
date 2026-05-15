@@ -14,7 +14,7 @@ public class ClassicKeyValidator {
         String alphabet = app.currentAlphabet();
         
         if (inputKey == null || inputKey.length() != alphabet.length()) {
-            throw new Exception("Key must be exactly " + alphabet.length() + " characters long.");
+            throw new Exception("Khóa phải có đúng " + alphabet.length() + " ký tự.");
         }
 
         boolean[] used = new boolean[alphabet.length()];
@@ -30,10 +30,11 @@ public class ClassicKeyValidator {
             }
             
             if (count == 0) {
-                throw new Exception("Key is missing the character: " + target);
+                throw new Exception("Khóa bị thiếu ký tự: " + target);
             }
+            
             if (count > 1) {
-                throw new Exception("Character '" + target + "' is duplicated in the key.");
+                throw new Exception("Ký tự '" + target + "' bị trùng trong khóa.");
             }
         }
     }
@@ -42,11 +43,14 @@ public class ClassicKeyValidator {
         int m = app.alphabetSize();
         
         if (calculateGCD(valA, m) != 1) {
-            throw new Exception("Key 'a' (" + valA + ") must be coprime with alphabet size (" + m + ").");
+            throw new Exception(
+                    "Khóa 'a' (" + valA + 
+                    ") phải nguyên tố cùng nhau với kích thước bảng chữ cái (" + m + ")."
+            );
         }
         
         if (valA <= 0) {
-            throw new Exception("Key 'a' must be a positive integer.");
+            throw new Exception("Khóa 'a' phải là số nguyên dương.");
         }
     }
 

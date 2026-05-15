@@ -23,8 +23,7 @@ public class DES implements SymmetricCipher {
 			this.transformConfig = algoName;
 		} else {
 			StringBuilder builder = new StringBuilder();
-			this.transformConfig = builder.append(algoName).append("/").append(mode).append("/").append(padding)
-					.toString();
+			this.transformConfig = builder.append(algoName).append("/").append(mode).append("/").append(padding).toString();
 		}
 	}
 
@@ -33,6 +32,7 @@ public class DES implements SymmetricCipher {
 		KeyGenerator kg = KeyGenerator.getInstance(algoName);
 		kg.init(bitLength, new SecureRandom());
 		this.secretKey = kg.generateKey();
+
 		return this.secretKey;
 	}
 
@@ -46,6 +46,7 @@ public class DES implements SymmetricCipher {
 		byte[] raw = new byte[8];
 		new SecureRandom().nextBytes(raw);
 		this.initVector = new IvParameterSpec(raw);
+
 		return this.initVector;
 	}
 
@@ -59,10 +60,12 @@ public class DES implements SymmetricCipher {
 		if (transformConfig.equals("ARCFOUR") || transformConfig.contains("/ECB/")) {
 			instance.init(opMode, secretKey);
 		} else {
-			if (this.initVector == null)
+			if (this.initVector == null) {
 				genIV();
+			}
 			instance.init(opMode, secretKey, initVector);
 		}
+
 		return instance;
 	}
 
@@ -77,6 +80,7 @@ public class DES implements SymmetricCipher {
 	public String decryptBase64(String encoded) throws Exception {
 		byte[] rawInput = Base64.getDecoder().decode(encoded);
 		Cipher c = getCipherInstance(Cipher.DECRYPT_MODE);
+
 		return new String(c.doFinal(rawInput), StandardCharsets.UTF_8);
 	}
 
@@ -84,25 +88,24 @@ public class DES implements SymmetricCipher {
 	public boolean processFile(String srcPath, String destPath, boolean encryptMode) throws Exception {
 		File inputFile = new File(srcPath);
 		File outputFile = new File(destPath);
-
 		if (encryptMode) {
 			executeFileEncryption(inputFile, outputFile);
 		} else {
 			executeFileDecryption(inputFile, outputFile);
 		}
+
 		return true;
 	}
 
 	private void executeFileEncryption(File input, File output) throws Exception {
 		try (InputStream is = new BufferedInputStream(new FileInputStream(input));
 				OutputStream os = new BufferedOutputStream(new FileOutputStream(output))) {
-
 			if (!transformConfig.contains("/ECB/")) {
 				genIV();
 				os.write(initVector.getIV());
 			}
-
 			Cipher cipher = getCipherInstance(Cipher.ENCRYPT_MODE);
+
 			transferData(is, os, cipher);
 		}
 	}
@@ -111,11 +114,13 @@ public class DES implements SymmetricCipher {
 		try (InputStream is = new BufferedInputStream(new FileInputStream(input))) {
 			if (!transformConfig.contains("/ECB/")) {
 				byte[] ivHeader = new byte[8];
-				if (is.read(ivHeader) < 8)
-					throw new IOException("Invalid DES file header");
+
+				if (is.read(ivHeader) < 8) {
+					throw new IOException("File DES không hợp lệ: thiếu IV!");
+				}
+
 				this.initVector = new IvParameterSpec(ivHeader);
 			}
-
 			Cipher cipher = getCipherInstance(Cipher.DECRYPT_MODE);
 			try (OutputStream os = new BufferedOutputStream(new FileOutputStream(output))) {
 				transferData(is, os, cipher);
@@ -127,13 +132,19 @@ public class DES implements SymmetricCipher {
 		byte[] dataBuffer = new byte[8192];
 		int readCount;
 		while ((readCount = in.read(dataBuffer)) != -1) {
+
 			byte[] processed = c.update(dataBuffer, 0, readCount);
-			if (processed != null)
+
+			if (processed != null) {
 				out.write(processed);
+			}
 		}
 		byte[] finalBlock = c.doFinal();
-		if (finalBlock != null)
+
+		if (finalBlock != null) {
 			out.write(finalBlock);
+		}
+
 		out.flush();
 	}
 

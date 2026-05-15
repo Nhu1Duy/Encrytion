@@ -9,7 +9,7 @@ import javax.swing.*;
 
 public class ClassicFileController {
 
-	private static final String HILL_MATRIX_PREFIX   = "matrix=";
+	private static final String HILL_MATRIX_PREFIX = "matrix=";
 	private static final String HILL_ORIG_LEN_PREFIX = "origLen=";
 
 	private final AppContext ctx;
@@ -40,7 +40,7 @@ public class ClassicFileController {
 		ctx.view.itemSaveOutput.addActionListener(e -> {
 			String content = ctx.view.ioPanel.getOutputArea().getText();
 			if (content.isBlank()) {
-				ctx.showError("Chua co ket qua de luu!");
+				ctx.showError("Chưa có kết quả để lưu");
 				return;
 			}
 			FileManager.saveText(ctx.view.frame, content);
@@ -68,15 +68,15 @@ public class ClassicFileController {
 			if (kp == null)
 				return;
 			kp.setKeyText(raw);
-			ctx.showInfo("Da nap khoa vao " + ctx.classicMethod + " thanh cong.");
+			ctx.showInfo("Đã nạp khóa vào: " + ctx.classicMethod + " thành công");
 		} catch (Exception ex) {
-			ctx.showError("Khong the nap khoa: " + ex.getMessage());
+			ctx.showError("Không thể nạp khóa: " + ex.getMessage());
 		}
 	}
 
 	private void importHillKey(String raw) throws Exception {
 		String matrixStr = null;
-		int origLen      = -1;
+		int origLen = -1;
 		for (String line : raw.split("\\r?\\n")) {
 			line = line.trim();
 			if (line.startsWith(HILL_MATRIX_PREFIX)) {
@@ -88,16 +88,20 @@ public class ClassicFileController {
 			}
 		}
 		if (matrixStr == null || matrixStr.isBlank())
-			throw new Exception("File khong chua du lieu ma tran hop le!");
+			throw new Exception("File không chứa dữ liệu ma trận hợp lệ!");
 
-		ctx.hillKeyMatrix   = parseHillMatrix(matrixStr);
+		ctx.hillKeyMatrix = parseHillMatrix(matrixStr);
 		ctx.hillOriginalLen = origLen;
+
 		classicView.getHillPanel().setKeyDisplay(matrixStr);
 
-		String msg = "Da nap khoa Hill thanh cong."
-				+ (origLen >= 0
-					? "\n(origLen = " + origLen + ")"
-					: "\n(origLen chua duoc luu — can ma hoa truoc khi giai ma)");
+		String msg;
+
+		if (origLen >= 0) {
+			msg = "Đã nạp khóa Hill thành công.\nĐộ dài gốc: " + origLen;
+		} else {
+			msg = "Đã nạp khóa Hill thành công.\nChưa có độ dài gốc để giải mã.";
+		}
 		JOptionPane.showMessageDialog(ctx.view.frame, msg, "Import Key", JOptionPane.INFORMATION_MESSAGE);
 	}
 
@@ -107,26 +111,25 @@ public class ClassicFileController {
 			int n;
 			int[] vals;
 			if (parts.length == 2) {
-				n    = Integer.parseInt(parts[0].trim());
+				n = Integer.parseInt(parts[0].trim());
 				vals = parseTokens(parts[1].trim().split("[,\\s]+"));
 			} else {
 				String[] tokens = key.trim().split("[,\\s]+");
 				n = (int) Math.round(Math.sqrt(tokens.length));
 				if (n * n != tokens.length)
-					throw new Exception("Khong xac dinh duoc kich thuoc ma tran tu "
-							+ tokens.length + " phan tu!");
+					throw new Exception("Không xác định được kích thước ma trận từ " + tokens.length + " phần tử!");
 				vals = parseTokens(tokens);
 			}
 			if (vals.length != n * n)
-				throw new Exception("So phan tu ma tran khong khop: can " + n * n
-						+ ", co " + vals.length + "!");
+				throw new Exception(
+						"Số phần tử của ma trận không khớp: cần " + (n * n) + ", hiện có " + vals.length + "!");
 			int[][] matrix = new int[n][n];
 			for (int i = 0; i < n; i++)
 				for (int j = 0; j < n; j++)
 					matrix[i][j] = vals[i * n + j];
 			return matrix;
 		} catch (NumberFormatException ex) {
-			throw new Exception("Du lieu ma tran chua ky tu khong hop le!");
+			throw new Exception("Dữ liệu ma trận chứa ký tự không hợp lệ!");
 		}
 	}
 
@@ -143,7 +146,7 @@ public class ClassicFileController {
 				return;
 			String content = buildKeyContent();
 			if (content == null || content.isBlank()) {
-				ctx.showError("Chua co khoa de luu!");
+				ctx.showError("Chưa có khóa để lưu!");
 				return;
 			}
 			FileManager.saveKey(ctx.view.frame, content);
@@ -166,8 +169,8 @@ public class ClassicFileController {
 
 	private void bindClearAll() {
 		ctx.view.itemClearAll.addActionListener(e -> {
-			int confirm = JOptionPane.showConfirmDialog(ctx.view.frame, "Xoa toan bo Input, Output va Key hien tai?",
-					"Xac nhan xoa", JOptionPane.YES_NO_OPTION);
+			int confirm = JOptionPane.showConfirmDialog(ctx.view.frame,
+					"Xóa toàn bộ dữ liệu Input, Output và Key hiện tại?", "Xác nhận", JOptionPane.YES_NO_OPTION);
 			if (confirm != JOptionPane.YES_OPTION)
 				return;
 			ctx.view.ioPanel.getInputArea().setText("");
@@ -178,17 +181,17 @@ public class ClassicFileController {
 
 	private void clearCurrentKey() {
 		switch (ctx.classicMethod) {
-		case ClassicCipherPanel.CAESAR      -> classicView.getCaesarPanel().setKeyField("");
+		case ClassicCipherPanel.CAESAR -> classicView.getCaesarPanel().setKeyField("");
 		case ClassicCipherPanel.SUBSTITUTION -> classicView.getSubstitutionPanel().getKeyArea().setText("");
 		case ClassicCipherPanel.AFFINE -> {
 			classicView.getAffinePanel().getKeyA().setText("");
 			classicView.getAffinePanel().getKeyB().setText("");
 		}
-		case ClassicCipherPanel.VIGENERE    -> classicView.getVigenerePanel().getKeyField().setText("");
+		case ClassicCipherPanel.VIGENERE -> classicView.getVigenerePanel().getKeyField().setText("");
 		case ClassicCipherPanel.HILL -> {
-			ctx.hillKeyMatrix   = null;
+			ctx.hillKeyMatrix = null;
 			ctx.hillOriginalLen = -1;
-			classicView.getHillPanel().setKeyDisplay("(Nhan Gen Key de tao khoa)");
+			classicView.getHillPanel().setKeyDisplay("(Nhấn Gen key để tạo khóa)");
 		}
 		case ClassicCipherPanel.PERMUTATION -> classicView.getPermutationPanel().getKeyField().setText("");
 		}

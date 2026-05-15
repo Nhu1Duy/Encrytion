@@ -3,6 +3,9 @@ package view.symmetric;
 import view.shared.KeyPanel;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+
+import util.FormatButton;
+
 import java.awt.*;
 
 public class SymmetricConfigPanel extends JPanel implements KeyPanel {
@@ -92,6 +95,7 @@ public class SymmetricConfigPanel extends JPanel implements KeyPanel {
         mainContent.add(keyPanel, BorderLayout.CENTER);
 
         btnGen = new JButton("⚡ Generate Key");
+		FormatButton.formatButton(btnGen, new Color(25, 118, 210));
         btnGen.setFocusPainted(false);
         
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));

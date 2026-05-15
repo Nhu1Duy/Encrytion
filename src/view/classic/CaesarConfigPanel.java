@@ -2,8 +2,10 @@ package view.classic;
 
 import javax.swing.*;
 
+import util.FormatButton;
 import view.shared.KeyPanel;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 
 public class CaesarConfigPanel extends JPanel implements KeyPanel {
@@ -17,6 +19,7 @@ public class CaesarConfigPanel extends JPanel implements KeyPanel {
 		keyField = new JTextField(5);
 		keyLenField = new JTextField("188", 3);
 		genBtn = new JButton("Gen Key");
+		FormatButton.formatButton(genBtn, new Color(33, 37, 41) );
 
 		add(new JLabel("Bước nhảy: "));
 		add(keyField);

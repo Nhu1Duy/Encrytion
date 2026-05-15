@@ -2,6 +2,9 @@ package view.asymmetric;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+
+import util.FormatButton;
+
 import java.awt.*;
 
 public class AsymmetricConfigPanel extends JPanel {
@@ -43,6 +46,7 @@ public class AsymmetricConfigPanel extends JPanel {
 		settingsPanel.add(cbPadding);
 
 		btnGenerate = new JButton("⚡ Generate RSA Keys");
+		FormatButton.formatButton(btnGenerate, new Color(142, 36, 170));
 		btnGenerate.setFocusPainted(false);
 
 		JPanel buttonWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
