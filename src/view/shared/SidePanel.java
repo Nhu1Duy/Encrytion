@@ -108,7 +108,13 @@ public class SidePanel extends JPanel {
 	    revalidate();
 	    repaint();
 	}
-
+	
+	public void setAlgorithmTitle(String title) {
+	    if (pnlConfig.getBorder() instanceof TitledBorder) {
+	        ((TitledBorder) pnlConfig.getBorder()).setTitle("Thuật toán: " + title);
+	        pnlConfig.repaint();
+	    }
+	}
 	public JButton getEncryptBtn() {
 		return btnTextEnc;
 	}

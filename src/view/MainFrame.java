@@ -93,50 +93,63 @@ public class MainFrame {
 	}
 	
 	private void constructMenu() {
-		JMenuBar mb = new JMenuBar();
-		
-		// File menu
-		JMenu file = new JMenu("File ▼");
-		file.add(itemImportInput);
-		file.add(itemSaveOutput);
-		file.addSeparator();
-		file.add(itemImportKey);
-		file.add(itemSaveKey);
-		file.addSeparator();
-		file.add(itemClearAll);
-		
-		// Algorithm menu
-		JMenu algo = new JMenu("Thuật toán ▼");
-		JMenu classic = new JMenu("Cổ Điển");
-		classic.add(itemCaesar);
-		classic.add(itemSubstitution);
-		classic.add(itemAffine);
-		classic.add(itemVigenere);
-		classic.add(itemHill);
-		classic.add(itemPermutation);
-		
-		algo.add(classic);
-		algo.addSeparator();
-		algo.add(itemSymmetric);
-		algo.addSeparator();
-		algo.add(itemAsymmetric);
-		algo.addSeparator();
-		algo.add(itemHash);
-		
-		// Language menu
-		JMenu lang = new JMenu("Ngôn ngữ ▼");
-		lang.add(itemVN);
-		lang.add(itemEN);
-		
-		mb.add(file);
-		mb.add(algo);
-		mb.add(lang);
-		frame.setJMenuBar(mb);
+	    JMenuBar mb = new JMenuBar();
+
+	    // File menu
+	    JMenu file = new JMenu("File ▼");
+	    file.add(itemImportInput);
+	    file.add(itemSaveOutput);
+	    file.addSeparator();
+	    file.add(itemImportKey);
+	    file.add(itemSaveKey);
+	    file.addSeparator();
+	    file.add(itemClearAll);
+
+	    // Algorithm menu
+	    JMenu algo = new JMenu("Thuật toán ▼");
+	    JMenu classic = new JMenu("Cổ Điển");
+	    classic.add(itemCaesar);
+	    classic.add(itemSubstitution);
+	    classic.add(itemAffine);
+	    classic.add(itemVigenere);
+	    classic.add(itemHill);
+	    classic.add(itemPermutation);
+
+	    algo.add(classic);
+	    algo.addSeparator();
+	    algo.add(itemSymmetric);
+	    algo.addSeparator();
+	    algo.add(itemAsymmetric);
+	    algo.addSeparator();
+	    algo.add(itemHash);
+
+	    JRadioButtonMenuItem radioVN = new JRadioButtonMenuItem("Tiếng Việt");
+	    JRadioButtonMenuItem radioEN = new JRadioButtonMenuItem("English");
+	    ButtonGroup langGroup = new ButtonGroup();
+	    langGroup.add(radioVN);
+	    langGroup.add(radioEN);
+	    radioVN.setSelected(true);
+
+	    radioVN.addActionListener(e -> itemVN.doClick());
+	    radioEN.addActionListener(e -> itemEN.doClick());
+
+	    JPanel langPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+	    langPanel.setOpaque(false);
+	    langPanel.setBorder(BorderFactory.createTitledBorder(" Ngôn ngữ"));
+	    langPanel.add(radioVN);
+	    langPanel.add(radioEN);
+
+	    mb.add(file);
+	    mb.add(algo);
+	    mb.add(langPanel);
+
+	    frame.setJMenuBar(mb);
 	}
 	
 	public void switchToClassic(String cipherName) {
 	    sidePanel.showCard("Classic"); 
 	    classicPanel.showCipher(cipherName);
+	    sidePanel.setAlgorithmTitle("Cổ Điển - " + cipherName);
 	}
 	
 	public void switchToSymmetric() {
