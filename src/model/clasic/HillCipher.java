@@ -95,11 +95,20 @@ public class HillCipher implements ClassicCipher {
             }
         }
 
+        if (count == 0) {
+            return text;
+        }
+
         int   padded     = count + (n - count % n) % n;
         int[] paddedIdx  = new int[padded];
         System.arraycopy(indices, 0, paddedIdx, 0, count);
+        
+        // FIX 1: Nếu không tìm thấy 'X', sử dụng ký tự đầu tiên an toàn hơn
         int padChar = indexOf(alphaCps, "X");
-        if (padChar < 0) padChar = 0;
+        if (padChar < 0) {
+            padChar = 0;  // Hoặc có thể log warning
+        }
+        
         for (int i = count; i < padded; i++) paddedIdx[i] = padChar;
 
         int[] outIdx = new int[padded];
@@ -109,22 +118,33 @@ public class HillCipher implements ClassicCipher {
             int[] result = mulVM(block, matrix, mod);
             System.arraycopy(result, 0, outIdx, i, n);
         }
-        int limit = (origAlphaCount >= 0 && origAlphaCount <= count) ? origAlphaCount : count;
+        
+        // FIX 2: Xác định giới hạn ký tự cần giữ lại chính xác hơn
+        int limit = count;
+        if (origAlphaCount >= 0 && origAlphaCount < count) {
+            limit = origAlphaCount;
+        }
 
         String[] output = textCps.clone();
         for (int i = 0; i < limit; i++)
             output[posMap[i]] = alphaCps[outIdx[i]];
 
-        List<String> alphaList = Arrays.asList(alphaCps);
+        // FIX 3: Xử lý cắt văn bản chính xác hơn
         if (origAlphaCount >= 0 && limit < count) {
-            int cutPos = posMap[limit]; 
+            int cutPos = posMap[limit];
             StringBuilder sb = new StringBuilder();
+            
+            // Thêm các ký tự được xử lý
             for (int i = 0; i < cutPos; i++) {
                 sb.append(output[i]);
             }
+            
+            // Thêm các ký tự không phải bảng chữ cái sau vị trí cắt
+            List<String> alphaList = Arrays.asList(alphaCps);
             for (int i = cutPos; i < textCps.length; i++) {
-                if (!alphaList.contains(textCps[i]))
+                if (!alphaList.contains(textCps[i])) {
                     sb.append(textCps[i]);
+                }
             }
             return sb.toString();
         }
@@ -135,7 +155,6 @@ public class HillCipher implements ClassicCipher {
     }
 
 
-    /** y = x * M  (row-vector nhân bên trái) */
     private int[] mulVM(int[] v, int[][] m, int mod) {
         int n = m.length;
         int[] r = new int[n];

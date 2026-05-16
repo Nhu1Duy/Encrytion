@@ -24,6 +24,7 @@ public class SidePanel extends JPanel {
 	private final JButton btnOpenOut = new JButton("📂");
 	private final JButton btnFileEnc = new JButton("🔒 Mã hóa File");
 	private final JButton btnFileDec = new JButton("🔓 Giải mã File");
+	private JPanel sectionText;
 
 	public SidePanel() {
 		setLayout(new BorderLayout(0, 10));
@@ -33,16 +34,18 @@ public class SidePanel extends JPanel {
 		pnlConfig.setBorder(BorderFactory.createTitledBorder("Cấu hình Thuật toán"));
 
 		JPanel pnlTextActions = new JPanel(new GridLayout(1, 2, 10, 0));
-		pnlTextActions.setBorder(new EmptyBorder(0, 0, 6, 0));
 		FormatButton.formatButton(btnTextEnc, new Color(0, 123, 255));
 		FormatButton.formatButton(btnTextDec, new Color(80, 80, 80));
 		pnlTextActions.add(btnTextEnc);
 		pnlTextActions.add(btnTextDec);
 
-		initFileSection();
+		sectionText = new JPanel(new BorderLayout());
+		sectionText.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Mã hóa / Giải mã Văn bản"));
+		sectionText.add(pnlTextActions, BorderLayout.CENTER);
 
+		initFileSection();
 		JPanel pnlSouth = new JPanel(new BorderLayout(0, 5));
-		pnlSouth.add(pnlTextActions, BorderLayout.NORTH);
+		pnlSouth.add(sectionText, BorderLayout.NORTH);
 		pnlSouth.add(sectionFile, BorderLayout.CENTER);
 
 		add(pnlConfig, BorderLayout.CENTER);
@@ -101,10 +104,9 @@ public class SidePanel extends JPanel {
 	}
 
 	public void setCryptoButtonsVisible(boolean visible) {
-		btnTextEnc.setVisible(visible);
-		btnTextDec.setVisible(visible);
-		revalidate();
-		repaint();
+	    sectionText.setVisible(visible);
+	    revalidate();
+	    repaint();
 	}
 
 	public JButton getEncryptBtn() {
