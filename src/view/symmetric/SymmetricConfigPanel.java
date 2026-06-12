@@ -12,7 +12,6 @@ public class SymmetricConfigPanel extends JPanel implements KeyPanel {
 
     private static final String[] BLOCK_MODES = {"CBC", "ECB", "CFB", "OFB", "CTR"};
     private static final String[] AES_MODES = {"CBC", "ECB", "CFB", "OFB", "CTR", "GCM"};
-    private static final String[] PADDING_LIST = {"PKCS5Padding", "NoPadding", "ISO10126Padding"};
 
     private final String algoName;
     private final int[] keySizes;
@@ -66,19 +65,11 @@ public class SymmetricConfigPanel extends JPanel implements KeyPanel {
             settingsGrid.add(cbMode);
 
             settingsGrid.add(new JLabel("Padding:"));
-            cbPadding = new JComboBox<>(PADDING_LIST);
+            cbPadding = new JComboBox<>();
             settingsGrid.add(cbPadding);
 
-            cbMode.addActionListener(e -> {
-                String mode = (String) cbMode.getSelectedItem();
-                if ("GCM".equals(mode) || "CTR".equals(mode) || "CFB".equals(mode) || "OFB".equals(mode)) {
-                    cbPadding.setSelectedItem("NoPadding");
-                    cbPadding.setEnabled(false);
-                } else {
-                    cbPadding.setSelectedItem("PKCS5Padding");
-                    cbPadding.setEnabled(true);
-                }
-            });
+            cbMode.addActionListener(e -> syncPaddingToMode());
+            syncPaddingToMode(); 
         }
 
         JPanel keyPanel = new JPanel(new BorderLayout(0, 5));
@@ -95,7 +86,7 @@ public class SymmetricConfigPanel extends JPanel implements KeyPanel {
         mainContent.add(keyPanel, BorderLayout.CENTER);
 
         btnGen = new JButton("⚡ Generate Key");
-		FormatButton.formatButton(btnGen, new Color(25, 118, 210));
+        FormatButton.formatButton(btnGen, new Color(25, 118, 210));
         btnGen.setFocusPainted(false);
         
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -104,6 +95,23 @@ public class SymmetricConfigPanel extends JPanel implements KeyPanel {
 
         add(mainContent, BorderLayout.CENTER);
         add(footer, BorderLayout.SOUTH);
+    }
+
+    private void syncPaddingToMode() {
+        String mode = (String) cbMode.getSelectedItem();
+        boolean isStreamMode = "GCM".equals(mode) || "CTR".equals(mode)
+                            || "CFB".equals(mode) || "OFB".equals(mode);
+
+        cbPadding.removeAllItems();
+        if (isStreamMode) {
+            cbPadding.addItem("NoPadding");
+            cbPadding.setEnabled(false);
+        } else {
+            cbPadding.addItem("PKCS5Padding");
+            cbPadding.addItem("ISO10126Padding");
+            cbPadding.setSelectedItem("PKCS5Padding");
+            cbPadding.setEnabled(true);
+        }
     }
 
     private String[] buildSizeOptions() {
